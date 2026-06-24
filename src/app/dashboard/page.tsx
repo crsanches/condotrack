@@ -80,7 +80,7 @@ export default function DashboardPage() {
               <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
   
                 <p className="text-xs text-gray-400 uppercase tracking-wider">
-                  Total
+                  Total de demandas
                 </p>
   
                 <p className="text-3xl font-bold text-[#1a2744] mt-1">
@@ -92,7 +92,7 @@ export default function DashboardPage() {
               <div className="bg-red-50 rounded-3xl p-4 border border-red-100">
   
                 <p className="text-xs text-red-400 uppercase tracking-wider">
-                  Pendentes
+                  Demandas Pendentes
                 </p>
   
                 <p className="text-3xl font-bold text-red-600 mt-1">
@@ -104,7 +104,7 @@ export default function DashboardPage() {
               <div className="bg-green-50 rounded-3xl p-4 border border-green-100">
   
                 <p className="text-xs text-green-500 uppercase tracking-wider">
-                  Concluídas
+                  Demandas Concluídas
                 </p>
   
                 <p className="text-3xl font-bold text-green-700 mt-1">
@@ -211,11 +211,25 @@ export default function DashboardPage() {
   
             <button
               onClick={() => router.push('/admin')}
-              className="w-full bg-white rounded-3xl border border-gray-200 p-4 shadow-sm flex items-center justify-center gap-3"
+              className="
+                w-full
+                bg-blue-200
+                border
+                border-blue-200
+                rounded-3xl
+                p-4
+                shadow-sm
+                flex
+                items-center
+                justify-center
+                gap-3
+                hover:bg-blue-200
+                transition-colors
+              "
             >
               <span className="text-xl">⚙️</span>
   
-              <span className="font-medium text-gray-700">
+              <span className="font-medium text-blue-600">
                 Administração de Usuários
               </span>
             </button>

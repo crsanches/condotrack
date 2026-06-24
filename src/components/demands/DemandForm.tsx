@@ -4,7 +4,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
-import { createDemand, updateDemand, addUpdate, getAllResponsaveis, } from '@/lib/firestore'
+import {
+  createDemand,
+  updateDemand,
+  addUpdate,
+  getAllResponsaveis,
+  createResponsavel,
+} from '@/lib/firestore'
 import { Timestamp } from 'firebase/firestore'
 import type {
   Demand,
@@ -57,6 +63,14 @@ export default function DemandForm({ existing }: DemandFormProps) {
   const [responsavelId, setResponsavelId] =
   useState('')
 
+  const [showNovoResponsavel, setShowNovoResponsavel] =
+  useState(false)
+
+  const [novoResponsavel, setNovoResponsavel] =
+  useState('')
+
+
+
   useEffect(() => {
     getAllResponsaveis().then(data => {
       console.log('RESPONSAVEIS:', data)
@@ -64,11 +78,48 @@ export default function DemandForm({ existing }: DemandFormProps) {
     })
   }, [])
 
-useEffect(() => {
-  if (existing?.responsavelId) {
-    setResponsavelId(existing.responsavelId)
+  useEffect(() => {
+    if (existing?.responsavelId) {
+      setResponsavelId(existing.responsavelId)
+    }
+  }, [existing])
+
+  const handleNovoResponsavel = async () => {
+
+    if (!novoResponsavel.trim()) return
+  
+    try {
+  
+      const novoId = await createResponsavel({
+        nome: novoResponsavel.trim(),
+        role: 'operacional',
+      })
+  
+      const novoItem: Responsavel = {
+        id: novoId,
+        nome: novoResponsavel.trim(),
+        role: 'operacional',
+        active: true,
+      }
+  
+      setResponsaveis(prev => [
+        ...prev,
+        novoItem,
+      ])
+  
+      setResponsavelId(novoId)
+  
+      setNovoResponsavel('')
+  
+      setShowNovoResponsavel(false)
+  
+    } catch (error) {
+      console.error(
+        'Erro ao criar responsável:',
+        error
+      )
+    }
   }
-}, [existing])
 
   const handleSave = async () => {
     if (!titulo.trim()) { setError('Informe o título da demanda.'); return }
@@ -201,31 +252,47 @@ useEffect(() => {
           </div>
   
           <div>
-            <label className="field-label">
-              Responsável <span className="text-red-500">*</span>
-            </label>
-  
-            <select
-            className="form-input"
-            value={responsavelId}
-            onChange={(e) => setResponsavelId(e.target.value)}
-          >
-            <option value="">
-              Selecione um responsável
-            </option>
+  <label className="field-label">
+    Responsável <span className="text-red-500">*</span>
+  </label>
 
-            {responsaveis.map((r) => (
-              <option
-                key={r.id}
-                value={r.id}
-              >
-                {r.nome}
-              </option>
-            ))}
+  <select
+    className="form-input"
+    value={responsavelId}
+    onChange={(e) => setResponsavelId(e.target.value)}
+  >
+    <option value="">
+      Selecione um responsável
+    </option>
 
-            
-          </select>
-          </div>
+    {responsaveis.map((r) => (
+      <option
+        key={r.id}
+        value={r.id}
+      >
+        {r.nome}
+      </option>
+    ))}
+  </select>
+
+  <div className="mt-2">
+    <button
+      type="button"
+      onClick={() =>
+        setShowNovoResponsavel(true)
+      }
+      className="
+        text-sm
+        text-[#1a2744]
+        font-medium
+        hover:underline
+      "
+    >
+      ➕ Cadastrar novo responsável
+    </button>
+  </div>
+
+</div>
         </div>
       </div>
   
@@ -383,6 +450,54 @@ useEffect(() => {
           {error}
         </div>
       )}
+
+      {/* MODAL NOVO RESPONSÁVEL */}
+{showNovoResponsavel && (
+  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+
+    <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md shadow-xl">
+
+      <h3 className="text-lg font-semibold mb-4">
+        Novo responsável
+      </h3>
+
+      <input
+        type="text"
+        className="form-input"
+        value={novoResponsavel}
+        onChange={(e) =>
+          setNovoResponsavel(e.target.value)
+        }
+        placeholder="Digite o nome"
+      />
+
+      <div className="flex gap-2 mt-4">
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowNovoResponsavel(false)
+            setNovoResponsavel('')
+          }}
+          className="btn-secondary flex-1"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          onClick={handleNovoResponsavel}
+          className="btn-primary flex-1"
+        >
+          Salvar
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+)}
   
       {/* FOOTER FIXO */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">

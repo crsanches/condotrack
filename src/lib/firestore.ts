@@ -11,6 +11,7 @@ import {
   orderBy,
   Timestamp,
   onSnapshot,
+  serverTimestamp,
   type QueryConstraint,
 } from 'firebase/firestore'
 import { db } from './firebase'
@@ -47,6 +48,7 @@ export async function getAllResponsaveis(): Promise<Responsavel[]> {
       }) as Responsavel
   )
 }
+
 
 
 // ── Criar Responsáveis ─────────────────────────────────────────────────────────────────────
