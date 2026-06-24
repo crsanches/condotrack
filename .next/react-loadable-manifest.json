@@ -1,10 +1,10 @@
 {
   "lib/auth.ts -> firebase/app": {
-    "id": "lib/auth.ts -> firebase/app",
+    "id": 5236,
     "files": []
   },
   "lib/auth.ts -> firebase/auth": {
-    "id": "lib/auth.ts -> firebase/auth",
+    "id": 5735,
     "files": []
   }
 }

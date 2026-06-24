@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+export const dynamic = 'force-dynamic'
+import { Suspense, useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { useDemands } from '@/hooks/useDemands'
@@ -15,7 +16,7 @@ import type {
   DemandType,
 } from '@/types'
 
-export default function DemandsPage() {
+function DemandsPageContent() {
   const router = useRouter()
   const params = useSearchParams()
   const { user, loading } = useAuth()
@@ -89,6 +90,9 @@ export default function DemandsPage() {
   const concluidas = demands.filter(
     d => d.status === 'concluida'
   ).length
+
+
+  
 
   return (
     <>
@@ -348,5 +352,18 @@ export default function DemandsPage() {
 
       </div>
     </>
+  )
+}
+export default function DemandsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          Carregando...
+        </div>
+      }
+    >
+      <DemandsPageContent />
+    </Suspense>
   )
 }
