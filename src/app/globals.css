@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --condo-navy: #1a2744;
+  --condo-amber: #e8b84b;
+  --prio-alta: #E24B4A;
+  --prio-media: #e8b84b;
+  --prio-baixa: #639922;
+}
+
+@layer base {
+  * { box-sizing: border-box; }
+  body { -webkit-tap-highlight-color: transparent; }
+}
+
+@layer components {
+  .prio-bar-alta  { @apply bg-red-500; }
+  .prio-bar-media { background: var(--condo-amber); }
+  .prio-bar-baixa { @apply bg-green-600; }
+
+  .badge-alta     { @apply bg-red-50 text-red-700 text-xs font-medium px-2 py-0.5 rounded-full; }
+  .badge-media    { @apply bg-amber-50 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full; }
+  .badge-baixa    { @apply bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full; }
+
+  .badge-aberta       { @apply bg-blue-50 text-blue-700 text-xs font-medium px-2 py-0.5 rounded-full; }
+  .badge-em_andamento { @apply bg-amber-50 text-amber-700 text-xs font-medium px-2 py-0.5 rounded-full; }
+  .badge-concluida    { @apply bg-green-50 text-green-700 text-xs font-medium px-2 py-0.5 rounded-full; }
+
+  .btn-primary {
+    @apply w-full py-3 bg-[#1a2744] text-white rounded-xl font-medium text-sm
+           active:opacity-80 transition-opacity;
+  }
+  .btn-secondary {
+    @apply w-full py-3 border border-[#1a2744] text-[#1a2744] rounded-xl font-medium text-sm
+           active:bg-gray-50 transition-colors;
+  }
+  .btn-danger {
+    @apply w-full py-3 border border-red-500 text-red-600 rounded-xl font-medium text-sm
+           active:bg-red-50 transition-colors;
+  }
+
+  .form-input {
+    @apply w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white
+           focus:outline-none focus:ring-2 focus:ring-[#1a2744]/20 focus:border-[#1a2744];
+  }
+
+  .field-label {
+    @apply block text-xs font-medium text-gray-500 mb-1.5;
+  }
+}

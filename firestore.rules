@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Funções auxiliares
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isActive() {
+      return isLoggedIn() && getUserData().active == true;
+    }
+
+    function canDelete() {
+      return isActive() && getUserData().canDelete == true;
+    }
+
+    function isSindico() {
+      return isActive() && getUserData().role == 'sindico';
+    }
+
+    // Users: apenas síndico cria/edita; todos leem
+    match /users/{uid} {
+      allow read: if isActive();
+      allow create: if isSindico();
+      allow update: if isSindico() || request.auth.uid == uid;
+      allow delete: if isSindico();
+    }
+
+    // Demands: todos leem/criam/atualizam; apenas canDelete pode deletar
+    match /demands/{demandId} {
+      allow read: if isActive();
+      allow create: if isActive();
+      allow update: if isActive();
+      allow delete: if canDelete();
+    }
+  }
+}
