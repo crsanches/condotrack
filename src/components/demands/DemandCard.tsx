@@ -10,12 +10,15 @@ interface DemandCardProps {
   demand: Demand
   users: CondoUser[]
   mode?: 'view' | 'update' | 'delete'
+  compact?: boolean
 }
 
 export default function DemandCard({
   demand,
   mode = 'view',
-}: DemandCardProps) {
+  compact = false,
+}: DemandCardProps)
+ {
   const router = useRouter()
 
   const lastUpd =
@@ -86,6 +89,74 @@ export default function DemandCard({
 
   const prio = priorityConfig[demand.prioridade]
   const status = statusConfig[demand.status]
+
+  if (compact) {
+    return (
+      <div
+        onClick={() => router.push(href)}
+        className="
+          bg-white
+          rounded-2xl
+          border
+          border-gray-100
+          shadow-sm
+          p-3
+          cursor-pointer
+        "
+      >
+        <div className="flex items-start justify-between">
+  
+          <div className="flex-1 min-w-0">
+  
+            <div className="flex items-center gap-2">
+  
+              <span
+                className={`
+                  px-2
+                  py-1
+                  rounded-full
+                  text-[10px]
+                  font-bold
+                  ${prio.bg}
+                  ${prio.text}
+                `}
+              >
+                {prio.icon}
+              </span>
+  
+              <div className="font-semibold text-gray-900 truncate">
+                {demand.titulo}
+              </div>
+  
+            </div>
+  
+            <div className="text-xs text-gray-500 mt-2">
+              👤 {demand.responsavelNome || 'Sem responsável'}
+              {' • '}
+              📅 {formatDate(demand.dataCriacao)}
+            </div>
+  
+          </div>
+  
+          <div
+            className={`
+              ml-3
+              px-2
+              py-1
+              rounded-full
+              text-xs
+              font-medium
+              ${status.bg}
+              ${status.text}
+            `}
+          >
+            {status.icon}
+          </div>
+  
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div

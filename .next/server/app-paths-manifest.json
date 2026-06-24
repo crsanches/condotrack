@@ -1,7 +1,4 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/auth/page": "app/auth/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/demands/nova/page": "app/demands/nova/page.js",
   "/demands/page": "app/demands/page.js"
 }

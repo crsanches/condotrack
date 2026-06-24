@@ -172,6 +172,39 @@ export default function AdminPage() {
 
     </div>
 
+    {/* RESPONSÁVEIS */}
+      <div className="px-4 mt-3">
+
+      <button
+        onClick={() =>
+          router.push('/admin/responsaveis')
+        }
+        className="
+          w-full
+          bg-green-100
+          border
+          border-green-200
+          rounded-3xl
+          p-4
+          shadow-sm
+          flex
+          items-center
+          justify-center
+          gap-3
+          hover:bg-green-200
+          transition-colors
+        "
+      >
+        <span className="text-xl">👥</span>
+
+        <span className="font-medium text-green-900">
+          Gerenciar Responsáveis
+        </span>
+
+      </button>
+
+      </div>
+
     {/* FORM */}
     {showForm && (
       <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">

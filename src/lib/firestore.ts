@@ -3,7 +3,7 @@ import {
   doc,
   getDocs,
   getDoc,
-  addDoc,
+  addDoc, 
   updateDoc,
   deleteDoc,
   query,
@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Demand, DemandUpdate, CondoUser, DemandStatus, Priority, DemandType, Responsavel } from '@/types'
+
 
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -194,4 +195,34 @@ export async function getDemandStats(): Promise<{
   }
 }
 
+export async function updateResponsavel(
+  id: string,
+  data: {
+    nome: string
+    email?: string
+    role: 'administrativo' | 'operacional'
+  }
+): Promise<void> {
+
+  await updateDoc(
+    doc(db, 'responsaveis', id),
+    {
+      nome: data.nome,
+      email: data.email || '',
+      role: data.role,
+    }
+  )
+}
+
+export async function inativarResponsavel(
+  id: string
+): Promise<void> {
+
+  await updateDoc(
+    doc(db, 'responsaveis', id),
+    {
+      active: false,
+    }
+  )
+}
 

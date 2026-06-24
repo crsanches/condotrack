@@ -33,6 +33,8 @@ function DemandsPageContent() {
   const [responsavel, setResponsavel] = useState('')
   const [responsaveis, setResponsaveis] =
   useState<Responsavel[]>([])
+  const [compactView, setCompactView] =
+  useState(true)
 
   const {
     demands,
@@ -285,6 +287,54 @@ function DemandsPageContent() {
           </div>
         </div>
 
+
+        {/* VISUALIZAÇÃO */}
+        <div className="px-4 mt-4">
+
+        <div className="flex justify-end gap-2">
+
+          <button
+            onClick={() => setCompactView(true)}
+            className={`
+              px-4
+              py-2
+              rounded-xl
+              text-sm
+              font-medium
+              transition-colors
+              ${
+                compactView
+                  ? 'bg-[#1a2744] text-white'
+                  : 'bg-gray-100 text-gray-600'
+              }
+            `}
+          >
+            📑 Resumido
+          </button>
+
+          <button
+            onClick={() => setCompactView(false)}
+            className={`
+              px-4
+              py-2
+              rounded-xl
+              text-sm
+              font-medium
+              transition-colors
+              ${
+                !compactView
+                  ? 'bg-[#1a2744] text-white'
+                  : 'bg-gray-100 text-gray-600'
+              }
+            `}
+          >
+            📋 Expandido
+          </button>
+
+        </div>
+
+        </div>
+
         {/* LISTA */}
         <div className="p-4 space-y-4 pb-24">
 
@@ -312,15 +362,45 @@ function DemandsPageContent() {
 
             </div>
           ) : (
-            demands.map(demand => (
+            [...demands]
+            .sort((a, b) => {
+
+              const prioridadePeso = {
+                alta: 3,
+                media: 2,
+                baixa: 1,
+              }
+
+              const prioridadeDiff =
+                prioridadePeso[b.prioridade] -
+                prioridadePeso[a.prioridade]
+
+              if (prioridadeDiff !== 0) {
+                return prioridadeDiff
+              }
+
+              const dataA =
+                typeof a.dataCriacao === 'string'
+                  ? new Date(a.dataCriacao).getTime()
+                  : a.dataCriacao?.toDate?.().getTime?.() || 0
+
+              const dataB =
+                typeof b.dataCriacao === 'string'
+                  ? new Date(b.dataCriacao).getTime()
+                  : b.dataCriacao?.toDate?.().getTime?.() || 0
+
+              return dataB - dataA
+            })
+            .map(demand => (
               <DemandCard
                 key={demand.id}
                 demand={demand}
                 users={users}
                 mode={mode}
+                compact={compactView}
               />
             ))
-          )}
+                    )}
 
         </div>
 
