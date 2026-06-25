@@ -167,7 +167,7 @@ export default function AdminPage() {
       >
         {showForm
           ? 'Fechar formulário'
-          : '➕ Novo usuário'}
+          : '👤 Criar novo usuário'}
       </button>
 
     </div>
@@ -181,9 +181,9 @@ export default function AdminPage() {
         }
         className="
           w-full
-          bg-green-100
+          bg-blue-300
           border
-          border-green-200
+          border-blue-200
           rounded-3xl
           p-4
           shadow-sm
@@ -191,7 +191,7 @@ export default function AdminPage() {
           items-center
           justify-center
           gap-3
-          hover:bg-green-200
+          hover:bg-blue-200
           transition-colors
         "
       >

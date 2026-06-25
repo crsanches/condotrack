@@ -11,11 +11,15 @@ import {
   orderBy,
   Timestamp,
   onSnapshot,
+  limit as firestoreLimit, 
   serverTimestamp,
   type QueryConstraint,
 } from 'firebase/firestore'
 import { db } from './firebase'
-import type { Demand, DemandUpdate, CondoUser, DemandStatus, Priority, DemandType, Responsavel } from '@/types'
+import type { Demand, DemandUpdate, CondoUser, DemandStatus, Priority, DemandType, Responsavel,TarefaPeriodica,
+  RegistroTarefa,
+  Contrato,
+  StatusTarefa, } from '@/types'
 
 
 
@@ -226,3 +230,173 @@ export async function inativarResponsavel(
   )
 }
 
+export async function getRecentDemands(limit = 5): Promise<Demand[]> {
+  const q = query(
+    collection(db, 'demands'),
+    orderBy('dataCriacao', 'desc'),
+    firestoreLimit(limit)
+  )
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Demand))
+}
+
+export function calcularStatusTarefa(
+  tarefa: TarefaPeriodica,
+  ultimoRegistro: RegistroTarefa | null
+): StatusTarefa {
+  if (!ultimoRegistro) return 'nunca_executada'
+
+  const hoje = new Date()
+  hoje.setHours(0, 0, 0, 0)
+
+  const ultima = ultimoRegistro.dataRealizacao.toDate()
+  ultima.setHours(0, 0, 0, 0)
+
+  const p = tarefa.periodicidade
+
+  if (p.tipo === 'intervalo') {
+    const proxima = new Date(ultima)
+    proxima.setDate(proxima.getDate() + p.diasIntervalo)
+    if (proxima < hoje) return 'atrasada'
+    if (proxima.getTime() === hoje.getTime()) return 'vence_hoje'
+    return 'em_dia'
+  }
+
+  if (p.tipo === 'mensal') {
+    const proxima = new Date(ultima)
+    proxima.setMonth(proxima.getMonth() + 1)
+    proxima.setDate(p.diaDoMes)
+    if (proxima < hoje) return 'atrasada'
+    if (proxima.getTime() === hoje.getTime()) return 'vence_hoje'
+    return 'em_dia'
+  }
+
+  if (p.tipo === 'semanal') {
+    // verifica se hoje é um dos dias previstos e já foi executada esta semana
+    const diaSemanaHoje = hoje.getDay()
+    const diasOrdenados = [...p.diasSemana].sort((a, b) => a - b)
+
+    // acha o último dia previsto até hoje
+    const ultimoDiaPrevisto = diasOrdenados
+      .filter(d => d <= diaSemanaHoje)
+      .at(-1)
+
+    if (ultimoDiaPrevisto === undefined) {
+      // o próximo dia previsto é na semana que vem — verifica semana passada
+      const ultimoDiaSemanaPassada = diasOrdenados.at(-1)!
+      const referencia = new Date(hoje)
+      referencia.setDate(hoje.getDate() - (7 - ultimoDiaSemanaPassada + diaSemanaHoje))
+      referencia.setHours(0, 0, 0, 0)
+      if (ultima < referencia) return 'atrasada'
+      return 'em_dia'
+    }
+
+    const referencia = new Date(hoje)
+    referencia.setDate(hoje.getDate() - (diaSemanaHoje - ultimoDiaPrevisto))
+    referencia.setHours(0, 0, 0, 0)
+
+    if (ultima < referencia) return 'atrasada'
+    if (diaSemanaHoje === ultimoDiaPrevisto && ultima.getTime() === referencia.getTime()) return 'vence_hoje'
+    return 'em_dia'
+  }
+
+  return 'em_dia'
+}
+
+// ── Tarefas Periódicas ─────────────────────────────────────────────
+
+export async function getAllTarefas(): Promise<TarefaPeriodica[]> {
+  const snap = await getDocs(
+    query(collection(db, 'tarefas_periodicas'), orderBy('titulo'))
+  )
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as TarefaPeriodica))
+}
+
+export async function getTarefa(id: string): Promise<TarefaPeriodica | null> {
+  const snap = await getDoc(doc(db, 'tarefas_periodicas', id))
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as TarefaPeriodica) : null
+}
+
+export async function createTarefa(
+  data: Omit<TarefaPeriodica, 'id' | 'criadoEm'>
+): Promise<string> {
+  const ref = await addDoc(collection(db, 'tarefas_periodicas'), {
+    ...data,
+    criadoEm: Timestamp.now(),
+  })
+  return ref.id
+}
+
+export async function updateTarefa(
+  id: string,
+  data: Partial<Omit<TarefaPeriodica, 'id' | 'criadoEm'>>
+): Promise<void> {
+  await updateDoc(doc(db, 'tarefas_periodicas', id), data)
+}
+
+// ── Registros de Tarefas ───────────────────────────────────────────
+
+export async function getRegistrosTarefa(tarefaId: string): Promise<RegistroTarefa[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'registros_tarefas'),
+      where('tarefaId', '==', tarefaId),
+      orderBy('dataRealizacao', 'desc')
+    )
+  )
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as RegistroTarefa))
+}
+
+export async function getUltimoRegistro(tarefaId: string): Promise<RegistroTarefa | null> {
+  const snap = await getDocs(
+    query(
+      collection(db, 'registros_tarefas'),
+      where('tarefaId', '==', tarefaId),
+      orderBy('dataRealizacao', 'desc'),
+      firestoreLimit(1)
+    )
+  )
+  if (snap.empty) return null
+  return { id: snap.docs[0].id, ...snap.docs[0].data() } as RegistroTarefa
+}
+
+export async function createRegistroTarefa(
+  data: Omit<RegistroTarefa, 'id' | 'criadoEm'>
+): Promise<string> {
+  const ref = await addDoc(collection(db, 'registros_tarefas'), {
+    ...data,
+    criadoEm: Timestamp.now(),
+  })
+  return ref.id
+}
+
+// ── Contratos ──────────────────────────────────────────────────────
+
+export async function getAllContratos(): Promise<Contrato[]> {
+  const snap = await getDocs(
+    query(collection(db, 'contratos'), orderBy('dataVencimento'))
+  )
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Contrato))
+}
+
+export async function getContrato(id: string): Promise<Contrato | null> {
+  const snap = await getDoc(doc(db, 'contratos', id))
+  return snap.exists() ? ({ id: snap.id, ...snap.data() } as Contrato) : null
+}
+
+export async function createContrato(
+  data: Omit<Contrato, 'id' | 'criadoEm'>
+): Promise<string> {
+  const ref = await addDoc(collection(db, 'contratos'), {
+    ...data,
+    criadoEm: Timestamp.now(),
+  })
+  return ref.id
+}
+
+export async function updateContrato(
+  id: string,
+  data: Partial<Omit<Contrato, 'id' | 'criadoEm'>>
+): Promise<void> {
+  await updateDoc(doc(db, 'contratos', id), data)
+}

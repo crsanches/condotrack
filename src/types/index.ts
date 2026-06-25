@@ -87,3 +87,74 @@ export interface Responsavel {
   role: 'administrativo' | 'operacional'
   active: boolean
 }
+
+// ── Tarefas Periódicas ─────────────────────────────────────────────
+
+export type PeriodicidadeTipo = 'semanal' | 'intervalo' | 'mensal'
+
+export interface PeriodicidadeSemanal {
+  tipo: 'semanal'
+  diasSemana: number[] // 0=dom, 1=seg, 2=ter, 3=qua, 4=qui, 5=sex, 6=sab
+}
+
+export interface PeriodicidadeIntervalo {
+  tipo: 'intervalo'
+  diasIntervalo: number // a cada N dias
+}
+
+export interface PeriodicidadeMensal {
+  tipo: 'mensal'
+  diaDoMes: number // 1–31
+}
+
+export type Periodicidade =
+  | PeriodicidadeSemanal
+  | PeriodicidadeIntervalo
+  | PeriodicidadeMensal
+
+export interface TarefaPeriodica {
+  id: string
+  titulo: string
+  descricao?: string
+  periodicidade: Periodicidade
+  responsavelPadraoId: string
+  responsavelPadraoNome: string
+  ativo: boolean
+  criadoEm: Timestamp
+  criadoPor: string
+}
+
+export type StatusTarefa = 'em_dia' | 'vence_hoje' | 'atrasada' | 'nunca_executada'
+
+export interface RegistroTarefa {
+  id: string
+  tarefaId: string
+  tarefaTitulo: string
+  dataRealizacao: Timestamp
+  responsavelId: string
+  responsavelNome: string
+  observacao?: string
+  fotoUrl?: string
+  criadoEm: Timestamp
+}
+
+// ── Contratos ──────────────────────────────────────────────────────
+
+export type StatusContrato = 'ativo' | 'encerrado' | 'em_renovacao'
+
+export interface Contrato {
+  id: string
+  fornecedor: string
+  cnpj?: string
+  objeto: string
+  valorMensal?: number
+  dataInicio: Timestamp
+  dataVencimento: Timestamp
+  diasAvisoRenovacao: number
+  status: StatusContrato
+  responsavelId: string
+  responsavelNome: string
+  observacoes?: string
+  criadoEm: Timestamp
+  criadoPor: string
+}
