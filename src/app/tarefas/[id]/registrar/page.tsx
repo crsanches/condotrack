@@ -89,7 +89,7 @@ export default function RegistrarTarefaPage() {
         responsavelId,
         responsavelNome: responsavel?.nome || '',
         observacao: observacao.trim() || undefined,
-        fotoUrl,
+        ...(fotoUrl ? { fotoUrl } : {}),  // ← só inclui se existir
       })
 
       router.replace(`/tarefas/${tarefa.id}`)

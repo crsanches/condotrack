@@ -1,9 +1,10 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/auth/page": "app/auth/page.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/demands/page": "app/demands/page.js",
-  "/page": "app/page.js",
   "/tarefas/page": "app/tarefas/page.js",
-  "/tarefas/nova/page": "app/tarefas/nova/page.js"
+  "/tarefas/[id]/page": "app/tarefas/[id]/page.js",
+  "/contratos/page": "app/contratos/page.js",
+  "/contratos/novo/page": "app/contratos/novo/page.js",
+  "/tarefas/[id]/editar/page": "app/tarefas/[id]/editar/page.js"
 }
