@@ -220,6 +220,7 @@ export default function ContratoDetailPage() {
           </div>
         )}
 
+
         {/* RODAPÉ INFO */}
         <div className="mx-4 mt-4">
           <p className="text-xs text-gray-300 text-center">
