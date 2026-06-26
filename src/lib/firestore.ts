@@ -61,6 +61,7 @@ export async function createResponsavel(data: {
   nome: string
   email?: string
   role: 'administrativo' | 'operacional'
+  acessoSigilo?: boolean  
 }): Promise<string> {
 
   const ref = await addDoc(
@@ -69,6 +70,7 @@ export async function createResponsavel(data: {
       nome: data.nome,
       email: data.email || '',
       role: data.role,
+      acessoSigilo: data.acessoSigilo ?? false,  
       active: true,
     }
   )
@@ -87,7 +89,8 @@ export interface DemandFilters {
 
 export function subscribeToDemands(
   filters: DemandFilters,
-  callback: (demands: Demand[]) => void
+  callback: (demands: Demand[]) => void,
+  acessoSigilo = false  
 ) {
   const q = query(
     collection(db, 'demands'),
@@ -98,7 +101,11 @@ export function subscribeToDemands(
     let demands = snap.docs.map(
       (d) => ({ id: d.id, ...d.data() } as Demand)
     )
-
+      // ── filtro sigilo ──────────────────────────────
+      if (!acessoSigilo) {
+        demands = demands.filter(d => !d.registroSigiloso)
+      }
+      // ──────────────────────────────────────────────
     if (filters.status) {
       demands = demands.filter(
         d => d.status === filters.status
@@ -143,6 +150,7 @@ export interface CreateDemandData {
   dataConclusao: Timestamp | null
   criadoPor: string
   primeiraAtualizacao?: string
+  registroSigiloso?: boolean 
 }
 
 export async function createDemand(data: CreateDemandData): Promise<string> {
@@ -205,6 +213,7 @@ export async function updateResponsavel(
     nome: string
     email?: string
     role: 'administrativo' | 'operacional'
+    acessoSigilo?: boolean 
   }
 ): Promise<void> {
 
@@ -214,6 +223,7 @@ export async function updateResponsavel(
       nome: data.nome,
       email: data.email || '',
       role: data.role,
+      acessoSigilo: data.acessoSigilo ?? false, 
     }
   )
 }
@@ -372,11 +382,17 @@ export async function createRegistroTarefa(
 
 // ── Contratos ──────────────────────────────────────────────────────
 
-export async function getAllContratos(): Promise<Contrato[]> {
+export async function getAllContratos(acessoSigilo = false): Promise<Contrato[]> {
   const snap = await getDocs(
     query(collection(db, 'contratos'), orderBy('dataVencimento'))
   )
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Contrato))
+  let contratos = snap.docs.map(d => ({ id: d.id, ...d.data() } as Contrato))
+
+  if (!acessoSigilo) {
+    contratos = contratos.filter(c => !c.registroSigiloso)
+  }
+
+  return contratos
 }
 
 export async function getContrato(id: string): Promise<Contrato | null> {
@@ -400,3 +416,4 @@ export async function updateContrato(
 ): Promise<void> {
   await updateDoc(doc(db, 'contratos', id), data)
 }
+

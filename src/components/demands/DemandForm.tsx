@@ -70,6 +70,8 @@ export default function DemandForm({ existing }: DemandFormProps) {
   useState('')
 
 
+const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigiloso ?? false)
+
 
   useEffect(() => {
     getAllResponsaveis().then(data => {
@@ -149,6 +151,7 @@ export default function DemandForm({ existing }: DemandFormProps) {
           status,
           dataPrevisao: toTs(dataPrevisao),
           dataConclusao: toTs(dataConclusao),
+          registroSigiloso,
         })
         if (newUpdate.trim()) {
           await addUpdate(existing.id, { texto: newUpdate.trim(), autor: user.uid }, existing.atualizacoes)
@@ -166,6 +169,7 @@ export default function DemandForm({ existing }: DemandFormProps) {
           dataConclusao: toTs(dataConclusao),
           criadoPor: user.uid,
           primeiraAtualizacao: newUpdate.trim() || undefined,
+          registroSigiloso,
         })
       }
       router.back()
@@ -250,8 +254,31 @@ export default function DemandForm({ existing }: DemandFormProps) {
               <option value="outro">📌 Outro</option>
             </select>
           </div>
+
+          {/* SIGILO */}
+        <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+          <div>
+            <p className="text-sm font-semibold text-amber-800">🔒 Registro sigiloso</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Visível apenas para membros com acesso a dados sigilosos
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setRegistroSigiloso(v => !v)}
+            className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+              registroSigiloso ? 'bg-amber-500' : 'bg-gray-300'
+            }`}
+          >
+            <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${
+              registroSigiloso ? 'translate-x-6' : 'translate-x-0'
+            }`} />
+          </button>
+        </div>
   
           <div>
+
+            
   <label className="field-label">
     Responsável <span className="text-red-500">*</span>
   </label>

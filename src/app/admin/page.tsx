@@ -277,6 +277,14 @@ export default function AdminPage() {
               <option value="conselheiro">
                 Conselheiro
               </option>
+
+              <option value="zelador">
+                Zelador
+              </option>
+
+              <option value="outros">
+                Outros
+              </option>
             </select>
           </div>
 

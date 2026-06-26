@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth'
 import Header from '@/components/layout/Header'
 import { getDemandStats, getRecentDemands, getAllTarefas, getUltimoRegistro, calcularStatusTarefa } from '@/lib/firestore'
 import type { Demand } from '@/types'
+import { ROLE_LABELS } from '@/types'
 
 interface Stats { total: number; abertas: number; em_andamento: number; concluidas: number }
 
@@ -109,8 +110,8 @@ export default function DashboardPage() {
                 <p className="text-white/70 text-sm">Bem-vindo</p>
                 <h1 className="text-xl font-bold">{user.name}</h1>
                 <p className="text-sm text-white/80">
-                  {user.role === 'sindico' ? 'Síndico' : user.role === 'subsindico' ? 'Subsíndico' : 'Conselheiro'}
-                </p>
+                {ROLE_LABELS[user.role] ?? user.role}   
+               </p>
               </div>
             </div>
           </div>

@@ -40,6 +40,7 @@ export default function ContratoDetailPage() {
   const [contrato, setContrato] = useState<Contrato | null>(null)
   const [loadingData, setLoadingData] = useState(true)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [registroSigiloso, setRegistroSigiloso] = useState(false)  // ← novo
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
@@ -55,6 +56,7 @@ export default function ContratoDetailPage() {
     try {
       const c = await getContrato(id)
       setContrato(c)
+      setRegistroSigiloso(c?.registroSigiloso ?? false)  // ← novo
     } finally {
       setLoadingData(false)
     }
@@ -69,6 +71,14 @@ export default function ContratoDetailPage() {
     } finally {
       setUpdatingStatus(false)
     }
+  }
+
+  async function handleToggleSigilo() {
+    if (!contrato) return
+    const novo = !registroSigiloso
+    setRegistroSigiloso(novo)
+    await updateContrato(id, { registroSigiloso: novo })
+    setContrato(prev => prev ? { ...prev, registroSigiloso: novo } : prev)
   }
 
   if (loading || !user) return null
@@ -116,12 +126,18 @@ export default function ContratoDetailPage() {
                 <h1 className="text-xl font-bold mt-2 leading-snug">{contrato.fornecedor}</h1>
                 <p className="text-sm text-white/75 mt-1">{contrato.objeto}</p>
               </div>
-              <span className={`text-xs font-semibold px-3 py-1.5 rounded-full flex-shrink-0 mt-1 ${cfg.bg} ${cfg.text}`}>
-                {cfg.label}
-              </span>
+              <div className="flex flex-col items-end gap-1 flex-shrink-0 mt-1">
+                <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text}`}>
+                  {cfg.label}
+                </span>
+                {registroSigiloso && (
+                  <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-100 text-amber-800">
+                    🔒 Sigiloso
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* alerta vencimento no hero */}
             {(vencido || vencendoEmBreve) && (
               <div className="mt-3 bg-white/20 rounded-2xl px-4 py-2 text-sm font-medium">
                 {vencido
@@ -176,6 +192,31 @@ export default function ContratoDetailPage() {
           </div>
         )}
 
+        {/* SIGILO — só síndico pode alterar */}
+        {isSindico && (
+          <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+            <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+              <div>
+                <p className="text-sm font-semibold text-amber-800">🔒 Registro sigiloso</p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  Visível apenas para membros com acesso a dados sigilosos
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleSigilo}
+                className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+                  registroSigiloso ? 'bg-amber-500' : 'bg-gray-300'
+                }`}
+              >
+                <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${
+                  registroSigiloso ? 'translate-x-6' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ALTERAR STATUS */}
         {isSindico && (
           <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
@@ -219,7 +260,6 @@ export default function ContratoDetailPage() {
             </button>
           </div>
         )}
-
 
         {/* RODAPÉ INFO */}
         <div className="mx-4 mt-4">

@@ -1,6 +1,6 @@
 import { Timestamp } from 'firebase/firestore'
 
-export type UserRole = 'sindico' | 'subsindico' | 'conselheiro'
+export type UserRole = 'sindico' | 'subsindico' | 'conselheiro' | 'zelador'| 'outros'
 
 export type DemandType =
   | 'manutencao'
@@ -22,6 +22,7 @@ export interface CondoUser {
   role: UserRole
   canDelete: boolean
   active: boolean
+  acessoSigilo?: boolean 
 }
 
 export interface DemandUpdate {
@@ -50,6 +51,8 @@ export interface Demand {
   criadoPor: string
 
   atualizacoes: DemandUpdate[]
+
+  registroSigiloso?: boolean 
 }
 
 export const TIPO_LABELS: Record<DemandType, string> = {
@@ -78,6 +81,8 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   sindico: 'Síndico',
   subsindico: 'Subsíndico',
   conselheiro: 'Conselheiro',
+  zelador: 'Zelador',
+  outros: 'Outros',
 }
 
 export interface Responsavel {
@@ -86,6 +91,7 @@ export interface Responsavel {
   email?: string
   role: 'administrativo' | 'operacional'
   active: boolean
+  acessoSigilo?: boolean 
 }
 
 // ── Tarefas Periódicas ─────────────────────────────────────────────
@@ -157,4 +163,5 @@ export interface Contrato {
   observacoes?: string
   criadoEm: Timestamp
   criadoPor: string
+  registroSigiloso?: boolean 
 }

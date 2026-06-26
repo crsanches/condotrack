@@ -25,6 +25,7 @@ export default function NovoContratoPage() {
   const [observacoes, setObservacoes] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [registroSigiloso, setRegistroSigiloso] = useState(false)
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
@@ -73,6 +74,7 @@ export default function NovoContratoPage() {
         responsavelNome: responsavel.nome,
         observacoes: observacoes.trim() || undefined,
         criadoPor: user!.uid,
+        registroSigiloso,
       })
       router.replace('/contratos')
     } catch (e: unknown) {
@@ -266,6 +268,28 @@ export default function NovoContratoPage() {
                 ))}
               </select>
             </div>
+
+            {/* SIGILO */}
+            <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+              <div>
+                <p className="text-sm font-semibold text-amber-800">🔒 Registro sigiloso</p>
+                <p className="text-xs text-amber-600 mt-0.5">
+                  Visível apenas para membros com acesso a dados sigilosos
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRegistroSigiloso(v => !v)}
+                className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+                  registroSigiloso ? 'bg-amber-500' : 'bg-gray-300'
+                }`}
+              >
+                <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${
+                  registroSigiloso ? 'translate-x-6' : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+
 
             <div>
               <label className="field-label">Observações</label>

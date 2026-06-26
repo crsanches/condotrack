@@ -66,7 +66,7 @@ export default function ContratosPage() {
   async function load() {
     setLoadingData(true)
     try {
-      const data = await getAllContratos()
+      const data =  await getAllContratos(user?.acessoSigilo ?? false)
       setContratos(data)
     } finally {
       setLoadingData(false)
