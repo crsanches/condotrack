@@ -261,15 +261,7 @@ function DemandsPageContent() {
           )}
         </div>
 
-        {/* FAB */}
-        {mode === 'view' && (
-          <button
-            onClick={() => router.push('/demands/nova')}
-            className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-[#1a2744] text-white text-3xl shadow-xl flex items-center justify-center"
-          >
-            +
-          </button>
-        )}
+       
 
       </div>
     </>
