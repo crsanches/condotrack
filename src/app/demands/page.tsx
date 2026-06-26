@@ -217,7 +217,7 @@ function DemandsPageContent() {
 
             {/* dropdown ordenação */}
             <div className="ml-auto flex flex-col items-end gap-1">
-              <label className="text-ls text-gray-600 font-medium">
+              <label className="text-ls text-blue-600 font-medium">
                 Ordenar por:
               </label>
               <select

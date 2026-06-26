@@ -21,30 +21,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/demands/nova/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/demands/nova/page.js"
-    ],
     "/demands/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/demands/page.js"
     ],
-    "/demands/[id]/page": [
+    "/_not-found/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/demands/[id]/page.js"
-    ],
-    "/demands/[id]/editar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/demands/[id]/editar/page.js"
-    ],
-    "/tarefas/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/page.js"
+      "static/chunks/app/_not-found/page.js"
     ]
   }
 }

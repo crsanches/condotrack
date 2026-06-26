@@ -62,9 +62,9 @@ export default function DashboardPage() {
     <div className="relative">
       <button
         onClick={() => setMenuOpen(v => !v)}
-        className="text-xs font-medium bg-white/20 text-white px-3 py-2 rounded-xl whitespace-nowrap"
+        className="text-xs font-medium bg-blue/20 text-blue px-3 py-2 rounded-xl whitespace-nowrap"
       >
-        👥 Cadastros
+        👥 Usuários e Responsáveis
       </button>
       {menuOpen && (
         <>
@@ -221,7 +221,8 @@ export default function DashboardPage() {
               <div className="font-semibold text-gray-800">Contratos</div>
               <div className="text-xs text-gray-500 mt-1">Fornecedores e vencimentos</div>
             </button>
-
+  {/* botao atualizar */}
+  {/* 
             <button
               onClick={() => router.push('/demands?mode=update')}
               className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
@@ -230,7 +231,9 @@ export default function DashboardPage() {
               <div className="font-semibold text-gray-800">Atualizar</div>
               <div className="text-xs text-gray-500 mt-1">Registrar andamento</div>
             </button>
-
+*/}
+  {/* botao excluir */}
+  {/* 
             <button
               onClick={() => router.push('/demands?mode=delete')}
               className="bg-amber-50 rounded-3xl p-5 border border-amber-200 text-left"
@@ -239,7 +242,7 @@ export default function DashboardPage() {
               <div className="font-semibold text-amber-700">Excluir</div>
               <div className="text-xs text-amber-600 mt-1">Remover demanda</div>
             </button>
-
+*/}
           </div>
         </div>
 
