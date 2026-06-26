@@ -223,7 +223,7 @@ function DemandsPageContent() {
               <select
                 value={sortKey}
                 onChange={e => setSortKey(e.target.value as SortKey)}
-                className="text-sm bg-gray-100 text-gray-700 font-medium rounded-xl px-3 py-2 border-none outline-none cursor-pointer"
+                className="text-xs bg-gray-100 text-gray-700 font-medium rounded-xl px-2 py-1 border-none outline-none cursor-pointer"
               >
                 {SORT_OPTIONS.map(o => (
                   <option key={o.value} value={o.value}>{o.label}</option>
