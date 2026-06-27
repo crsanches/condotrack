@@ -1,5 +1,6 @@
 import { Timestamp } from 'firebase/firestore'
 
+
 export type UserRole = 'sindico' | 'subsindico' | 'conselheiro' | 'zelador'| 'outros'
 
 export type DemandType =
@@ -164,4 +165,53 @@ export interface Contrato {
   criadoEm: Timestamp
   criadoPor: string
   registroSigiloso?: boolean 
+}
+
+
+
+
+export interface ObservacaoOrcamento {
+  id: string
+  texto: string
+  autorId: string
+  autorNome: string
+  criadoEm: Timestamp
+}
+
+export type StatusOrcamento = 'aberto' | 'concluido'
+export type ResultadoOrcamento = 'contratado' | 'nao_contratado'
+
+export interface Orcamento {
+  id: string
+  titulo: string
+  descricao: string
+  status: StatusOrcamento
+  resultado: ResultadoOrcamento | null
+  contratoId: string | null
+  registroSigiloso: boolean
+  observacoes: ObservacaoOrcamento[]
+  criadoPor: string
+  criadoEm: Timestamp
+  concluidoEm: Timestamp | null
+  concluidoPor: string | null
+  totalCotacoes?: number
+}
+
+export interface Cotacao {
+  id: string
+  orcamentoId: string
+  fornecedor: string
+  cnpjCpf: string
+  telefone: string
+  contato: string
+  endereco: string
+  email: string
+  site: string
+  tipoServico: string
+  prazo: string
+  valor: number | null
+  condicoesGerais: string
+  selecionada: boolean
+  criadoPor: string
+  criadoEm: Timestamp
 }

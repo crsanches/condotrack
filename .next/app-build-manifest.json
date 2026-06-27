@@ -21,50 +21,30 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/tarefas/page": [
+    "/orcamentos/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/page.js"
+      "static/chunks/app/orcamentos/page.js"
     ],
-    "/tarefas/nova/page": [
+    "/orcamentos/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/nova/page.js"
+      "static/chunks/app/orcamentos/[id]/page.js"
     ],
-    "/admin/responsaveis/page": [
+    "/contratos/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin/responsaveis/page.js"
+      "static/chunks/app/contratos/page.js"
     ],
-    "/admin/page": [
+    "/contratos/novo/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin/page.js"
+      "static/chunks/app/contratos/novo/page.js"
     ],
-    "/tarefas/[id]/editar/page": [
+    "/contratos/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/[id]/editar/page.js"
-    ],
-    "/tarefas/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/[id]/page.js"
-    ],
-    "/demands/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/demands/page.js"
-    ],
-    "/demands/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/demands/[id]/page.js"
-    ],
-    "/demands/[id]/editar/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/demands/[id]/editar/page.js"
+      "static/chunks/app/contratos/[id]/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

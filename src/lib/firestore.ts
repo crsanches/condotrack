@@ -14,13 +14,17 @@ import {
   limit as firestoreLimit, 
   serverTimestamp,
   type QueryConstraint,
+  arrayUnion,
 } from 'firebase/firestore'
 import { db } from './firebase'
 import type { Demand, DemandUpdate, CondoUser, DemandStatus, Priority, DemandType, Responsavel,TarefaPeriodica,
   RegistroTarefa,
   Contrato,
-  StatusTarefa, } from '@/types'
+  StatusTarefa, Cotacao, Orcamento, ObservacaoOrcamento, ResultadoOrcamento} from '@/types'
+  import { v4 as uuidv4 } from 'uuid'
 
+
+   
 
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -417,3 +421,129 @@ export async function updateContrato(
   await updateDoc(doc(db, 'contratos', id), data)
 }
 
+
+
+// ── Orçamentos ────────────────────────────────────────────────────────────────
+ 
+export async function createOrcamento(
+  data: Omit<Orcamento, 'id' | 'status' | 'resultado' | 'contratoId' | 'concluidoEm' | 'concluidoPor' | 'observacoes' | 'totalCotacoes'>
+): Promise<string> {
+  const ref = collection(db, 'orcamentos')
+  const docRef = await addDoc(ref, {
+    ...data,
+    status: 'aberto',
+    resultado: null,
+    contratoId: null,
+    concluidoEm: null,
+    concluidoPor: null,
+    observacoes: [],
+    criadoEm: Timestamp.now(),
+  })
+  return docRef.id
+}
+ 
+export async function getAllOrcamentos(): Promise<Orcamento[]> {
+  const ref = collection(db,  'orcamentos')
+  const snap = await getDocs(query(ref, orderBy('criadoEm', 'desc')))
+  const orcamentos: Orcamento[] = []
+ 
+  for (const d of snap.docs) {
+    const cotacoesSnap = await getDocs(
+      collection(db,  'orcamentos', d.id, 'cotacoes')
+    )
+    orcamentos.push({
+      ...(d.data() as Omit<Orcamento, 'id' | 'totalCotacoes'>),
+      id: d.id,
+      totalCotacoes: cotacoesSnap.size,
+    })
+  }
+  return orcamentos
+}
+ 
+export async function getOrcamento(id: string): Promise<Orcamento | null> {
+  const ref = doc(db, 'orcamentos', id)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return null
+  return { ...(snap.data() as Omit<Orcamento, 'id'>), id: snap.id }
+}
+ 
+export async function updateOrcamento(id: string, data: Partial<Orcamento>): Promise<void> {
+  const ref = doc(db,  'orcamentos', id)
+  await updateDoc(ref, data as any)
+}
+ 
+export async function deleteOrcamento(id: string): Promise<void> {
+  // Apaga subcoleção de cotações primeiro
+  const cotacoesSnap = await getDocs(
+    collection(db,  'orcamentos', id, 'cotacoes')
+  )
+  for (const d of cotacoesSnap.docs) {
+    await deleteDoc(d.ref)
+  }
+  await deleteDoc(doc(db,  'orcamentos', id))
+}
+ 
+export async function concluirOrcamento(
+  id: string,
+  resultado: ResultadoOrcamento,
+  concluidoPor: string,
+  cotacaoSelecionadaId?: string
+): Promise<void> {
+  const ref = doc(db,  'orcamentos', id)
+  await updateDoc(ref, {
+    status: 'concluido',
+    resultado,
+    concluidoEm: Timestamp.now(),
+    concluidoPor,
+  })
+ 
+  if (cotacaoSelecionadaId) {
+    const cotacoesSnap = await getDocs(
+      collection(db,  'orcamentos', id, 'cotacoes')
+    )
+    for (const d of cotacoesSnap.docs) {
+      await updateDoc(d.ref, { selecionada: d.id === cotacaoSelecionadaId })
+    }
+  }
+}
+ 
+export async function addObservacaoOrcamento(
+  orcamentoId: string,
+  obs: Omit<ObservacaoOrcamento, 'id' | 'criadoEm'>
+): Promise<void> {
+  const ref = doc(db,  'orcamentos', orcamentoId)
+  const novaObs: ObservacaoOrcamento = {
+    id: uuidv4(),
+    ...obs,
+    criadoEm: Timestamp.now(),
+  }
+  await updateDoc(ref, { observacoes: arrayUnion(novaObs) })
+}
+ 
+// ── Cotações ──────────────────────────────────────────────────────────────────
+ 
+export async function createCotacao(
+  orcamentoId: string,
+  data: Omit<Cotacao, 'id' | 'orcamentoId' | 'selecionada' | 'criadoEm'>
+): Promise<string> {
+  const ref = collection(db,  'orcamentos', orcamentoId, 'cotacoes')
+  const docRef = await addDoc(ref, {
+    ...data,
+    orcamentoId,
+    selecionada: false,
+    criadoEm: Timestamp.now(),
+  })
+  return docRef.id
+}
+ 
+export async function getCotacoes(orcamentoId: string): Promise<Cotacao[]> {
+  const ref = collection(db,  'orcamentos', orcamentoId, 'cotacoes')
+  const snap = await getDocs(query(ref, orderBy('criadoEm', 'asc')))
+  return snap.docs.map(d => ({ ...(d.data() as Omit<Cotacao, 'id'>), id: d.id }))
+}
+ 
+export async function deleteCotacao(orcamentoId: string, cotacaoId: string): Promise<void> {
+  await deleteDoc(
+    doc(db, 'orcamentos', orcamentoId, 'cotacoes', cotacaoId)
+  )
+} 

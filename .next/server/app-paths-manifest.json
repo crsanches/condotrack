@@ -1,9 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/responsaveis/page": "app/admin/responsaveis/page.js",
-  "/admin/page": "app/admin/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/auth/page": "app/auth/page.js",
-  "/demands/page": "app/demands/page.js",
-  "/tarefas/page": "app/tarefas/page.js"
+  "/orcamentos/page": "app/orcamentos/page.js",
+  "/orcamentos/[id]/page": "app/orcamentos/[id]/page.js",
+  "/contratos/page": "app/contratos/page.js",
+  "/contratos/novo/page": "app/contratos/novo/page.js",
+  "/contratos/[id]/page": "app/contratos/[id]/page.js",
+  "/page": "app/page.js",
+  "/auth/page": "app/auth/page.js"
 }
