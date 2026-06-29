@@ -258,65 +258,116 @@ export function calcularStatusTarefa(
   tarefa: TarefaPeriodica,
   ultimoRegistro: RegistroTarefa | null
 ): StatusTarefa {
-  if (!ultimoRegistro) return 'nunca_executada'
 
   const hoje = new Date()
   hoje.setHours(0, 0, 0, 0)
+
+  if (!ultimoRegistro) {
+    return 'nunca_executada'
+  }
 
   const ultima = ultimoRegistro.dataRealizacao.toDate()
   ultima.setHours(0, 0, 0, 0)
 
   const p = tarefa.periodicidade
 
+  // ==========================================================
+  // INTERVALO
+  // ==========================================================
+
   if (p.tipo === 'intervalo') {
-    const proxima = new Date(ultima)
-    proxima.setDate(proxima.getDate() + p.diasIntervalo)
-    if (proxima < hoje) return 'atrasada'
-    if (proxima.getTime() === hoje.getTime()) return 'vence_hoje'
-    return 'em_dia'
-  }
 
-  if (p.tipo === 'mensal') {
-    const proxima = new Date(ultima)
-    proxima.setMonth(proxima.getMonth() + 1)
-    proxima.setDate(p.diaDoMes)
-    if (proxima < hoje) return 'atrasada'
-    if (proxima.getTime() === hoje.getTime()) return 'vence_hoje'
-    return 'em_dia'
-  }
+    const vencimento = new Date(ultima)
+    vencimento.setDate(vencimento.getDate() + p.diasIntervalo)
 
-  if (p.tipo === 'semanal') {
-    // verifica se hoje é um dos dias previstos e já foi executada esta semana
-    const diaSemanaHoje = hoje.getDay()
-    const diasOrdenados = [...p.diasSemana].sort((a, b) => a - b)
-
-    // acha o último dia previsto até hoje
-    const ultimoDiaPrevisto = diasOrdenados
-      .filter(d => d <= diaSemanaHoje)
-      .at(-1)
-
-    if (ultimoDiaPrevisto === undefined) {
-      // o próximo dia previsto é na semana que vem — verifica semana passada
-      const ultimoDiaSemanaPassada = diasOrdenados.at(-1)!
-      const referencia = new Date(hoje)
-      referencia.setDate(hoje.getDate() - (7 - ultimoDiaSemanaPassada + diaSemanaHoje))
-      referencia.setHours(0, 0, 0, 0)
-      if (ultima < referencia) return 'atrasada'
+    if (hoje.getTime() < vencimento.getTime()) {
       return 'em_dia'
     }
 
-    const referencia = new Date(hoje)
-    referencia.setDate(hoje.getDate() - (diaSemanaHoje - ultimoDiaPrevisto))
-    referencia.setHours(0, 0, 0, 0)
+    if (hoje.getTime() === vencimento.getTime()) {
+      return 'vence_hoje'
+    }
 
-    if (ultima < referencia) return 'atrasada'
-    if (diaSemanaHoje === ultimoDiaPrevisto && ultima.getTime() === referencia.getTime()) return 'vence_hoje'
-    return 'em_dia'
+    return 'atrasada'
+  }
+
+  // ==========================================================
+  // MENSAL
+  // ==========================================================
+
+  if (p.tipo === 'mensal') {
+
+    const diaHoje = hoje.getDate()
+
+    if (diaHoje < p.diaDoMes) {
+      return 'em_dia'
+    }
+
+    const executouNesteMes =
+      ultima.getMonth() === hoje.getMonth() &&
+      ultima.getFullYear() === hoje.getFullYear() &&
+      ultima.getDate() >= p.diaDoMes
+
+    if (executouNesteMes) {
+      return 'em_dia'
+    }
+
+    if (diaHoje === p.diaDoMes) {
+      return 'vence_hoje'
+    }
+
+    return 'atrasada'
+  }
+
+  // ==========================================================
+  // SEMANAL
+  // ==========================================================
+
+  if (p.tipo === 'semanal') {
+
+    const hojeSemana = hoje.getDay()
+
+    if (!p.diasSemana.includes(hojeSemana)) {
+
+      // Não é dia da tarefa.
+      // Se já passou o último dia previsto sem executar, está atrasada.
+
+      const ultimoDia = Math.max(
+        ...p.diasSemana.filter(d => d <= hojeSemana),
+        -1
+      )
+
+      if (ultimoDia === -1) {
+        return 'em_dia'
+      }
+
+      const referencia = new Date(hoje)
+      referencia.setDate(
+        hoje.getDate() - (hojeSemana - ultimoDia)
+      )
+      referencia.setHours(0,0,0,0)
+
+      if (ultima < referencia) {
+        return 'atrasada'
+      }
+
+      return 'em_dia'
+    }
+
+    // Hoje é um dos dias previstos.
+
+    const executouHoje =
+      ultima.getTime() === hoje.getTime()
+
+    if (executouHoje) {
+      return 'em_dia'
+    }
+
+    return 'vence_hoje'
   }
 
   return 'em_dia'
 }
-
 // ── Tarefas Periódicas ─────────────────────────────────────────────
 
 export async function getAllTarefas(): Promise<TarefaPeriodica[]> {
@@ -405,6 +456,12 @@ export async function createRegistroTarefa(
   const ref = await addDoc(collection(db, 'registros_tarefas'), {
     ...data,
     criadoEm: Timestamp.now(),
+  })
+
+//console log
+  console.log('Registro criado:', {
+    tarefa: data.tarefaTitulo,
+    data: data.dataRealizacao.toDate()
   })
   return ref.id
 }

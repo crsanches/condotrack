@@ -136,6 +136,7 @@ export default function RegistrarTarefaPage() {
     }
   }
 
+  
   if (loading || !user || !tarefa) return null
 
   return (

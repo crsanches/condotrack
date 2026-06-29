@@ -66,6 +66,13 @@ export default function TarefasPage() {
           .filter(t => t.ativo)
           .map(async tarefa => {
             const ultimoRegistro = await getUltimoRegistro(tarefa.id)
+            
+            //console log
+            console.log(
+              tarefa.titulo,
+              ultimoRegistro?.dataRealizacao?.toDate(),
+              calcularStatusTarefa(tarefa, ultimoRegistro)
+            )
             const status = calcularStatusTarefa(tarefa, ultimoRegistro)
             return { tarefa, ultimoRegistro, status }
           })
