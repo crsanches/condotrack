@@ -8,8 +8,12 @@ import {
   getAllTarefas,
   getUltimoRegistro,
   calcularStatusTarefa,
+  subscribeToTarefas,
+  subscribeToRegistros, 
 } from '@/lib/firestore'
 import type { TarefaPeriodica, RegistroTarefa, StatusTarefa } from '@/types'
+
+
 
 interface TarefaComStatus {
   tarefa: TarefaPeriodica
@@ -78,8 +82,34 @@ export default function TarefasPage() {
 
   useEffect(() => {
     if (!user) return
+  
     load()
-  }, [user, pathname, load])
+  
+    const unsubTarefas = subscribeToTarefas(() => {
+      load()
+    })
+  
+    const unsubRegistros = subscribeToRegistros(() => {
+      load()
+    })
+  
+    return () => {
+      unsubTarefas()
+      unsubRegistros()
+    }
+  }, [user, load])
+
+  useEffect(() => {
+    function handleFocus() {
+      load()
+    }
+  
+    window.addEventListener('focus', handleFocus)
+  
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [load])
 
   if (loading || !user) return null
 

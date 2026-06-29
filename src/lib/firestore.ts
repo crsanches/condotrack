@@ -326,6 +326,31 @@ export async function getAllTarefas(): Promise<TarefaPeriodica[]> {
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as TarefaPeriodica))
 }
 
+export function subscribeToTarefas(
+  callback: (tarefas: TarefaPeriodica[]) => void
+) {
+  const q = query(
+    collection(db, 'tarefas_periodicas'),
+    orderBy('titulo')
+  )
+
+  return onSnapshot(q, snap => {
+    callback(
+      snap.docs.map(
+        d => ({ id: d.id, ...d.data() } as TarefaPeriodica)
+      )
+    )
+  })
+}
+export function subscribeToRegistros(
+  callback: () => void
+) {
+  return onSnapshot(
+    collection(db, 'registros_tarefas'),
+    () => callback()
+  )
+}
+
 export async function getTarefa(id: string): Promise<TarefaPeriodica | null> {
   const snap = await getDoc(doc(db, 'tarefas_periodicas', id))
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as TarefaPeriodica) : null

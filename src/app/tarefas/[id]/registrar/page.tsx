@@ -127,7 +127,8 @@ export default function RegistrarTarefaPage() {
         } : {}),
       })
 
-      router.replace(`/tarefas`)
+      router.replace('/tarefas')
+      router.refresh()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erro ao salvar.')
     } finally {
