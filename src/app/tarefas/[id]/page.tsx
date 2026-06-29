@@ -12,6 +12,7 @@ import {
   updateTarefa,
 } from '@/lib/firestore'
 import type { TarefaPeriodica, RegistroTarefa, StatusTarefa } from '@/types'
+import { NAO_CONFORMIDADE_LABELS, PRIORITY_LABELS } from '@/types'
 
 const STATUS_CONFIG = {
   em_dia:          { label: 'Em dia',         bg: 'bg-green-50',  text: 'text-green-700', dot: 'bg-green-500'  },
@@ -206,58 +207,102 @@ export default function TarefaDetailPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {registros.map((r, i) => (
-                <div
-                  key={r.id}
-                  className={`
-                    bg-white rounded-3xl border shadow-sm overflow-hidden
-                    ${i === 0 ? 'border-green-100' : 'border-gray-100'}
-                  `}
-                >
-                  {i === 0 && <div className="h-1 bg-green-500" />}
+              {registros.map((r, i) => {
+                const naoConforme = r.conforme === false
 
-                  <div className="p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <p className="text-sm font-semibold text-gray-800">
-                          {formatDate(r.dataRealizacao)}
-                        </p>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Registrado em {formatDateTime(r.criadoEm)}
-                        </p>
+                return (
+                  <div
+                    key={r.id}
+                    className={`
+                      bg-white rounded-3xl border shadow-sm overflow-hidden
+                      ${naoConforme ? 'border-red-100' : i === 0 ? 'border-green-100' : 'border-gray-100'}
+                    `}
+                  >
+                    {/* barra topo: vermelha se NC, verde se mais recente, cinza caso contrário */}
+                    <div className={`h-1 ${naoConforme ? 'bg-red-500' : i === 0 ? 'bg-green-500' : 'bg-gray-100'}`} />
+
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {formatDate(r.dataRealizacao)}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            Registrado em {formatDateTime(r.criadoEm)}
+                          </p>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {i === 0 && !naoConforme && (
+                            <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
+                              Mais recente
+                            </span>
+                          )}
+                          {/* Badge de conformidade */}
+                          <span className={`
+                            text-xs px-2 py-1 rounded-full font-medium
+                            ${naoConforme
+                              ? 'bg-red-50 text-red-600'
+                              : 'bg-green-50 text-green-700'}
+                          `}>
+                            {naoConforme ? '⚠️ Não conforme' : '✅ Conforme'}
+                          </span>
+                        </div>
                       </div>
-                      {i === 0 && (
-                        <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full font-medium">
-                          Mais recente
-                        </span>
+
+                      <div className="text-xs text-gray-500 mb-2">
+                        👤 {r.responsavelNome}
+                      </div>
+
+                      {/* Detalhes da não conformidade */}
+                      {naoConforme && r.naoConformidadeTipo && (
+                        <div className="mb-3 bg-red-50 border border-red-100 rounded-2xl p-3 space-y-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-semibold text-red-700">
+                              {NAO_CONFORMIDADE_LABELS[r.naoConformidadeTipo]}
+                            </span>
+                            {r.naoConformidadePrioridade && (
+                              <span className={`
+                                text-xs px-2 py-0.5 rounded-full font-medium border
+                                ${r.naoConformidadePrioridade === 'alta'
+                                  ? 'bg-red-100 text-red-700 border-red-200'
+                                  : r.naoConformidadePrioridade === 'media'
+                                  ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                  : 'bg-gray-50 text-gray-600 border-gray-200'}
+                              `}>
+                                Prioridade {PRIORITY_LABELS[r.naoConformidadePrioridade]}
+                              </span>
+                            )}
+                          </div>
+                          {r.naoConformidadeDetalhe && (
+                            <p className="text-xs text-red-600 leading-relaxed">
+                              {r.naoConformidadeDetalhe}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {r.observacao && (
+                        <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3">
+                          {r.observacao}
+                        </p>
+                      )}
+
+                      {r.fotoUrl && (
+                        <button
+                          onClick={() => setFotoAberta(r.fotoUrl!)}
+                          className="mt-3 w-full"
+                        >
+                          <img
+                            src={r.fotoUrl}
+                            alt="Foto da execução"
+                            className="w-full rounded-2xl object-cover max-h-48"
+                          />
+                        </button>
                       )}
                     </div>
-
-                    <div className="text-xs text-gray-500 mb-2">
-                      👤 {r.responsavelNome}
-                    </div>
-
-                    {r.observacao && (
-                      <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3">
-                        {r.observacao}
-                      </p>
-                    )}
-
-                    {r.fotoUrl && (
-                      <button
-                        onClick={() => setFotoAberta(r.fotoUrl!)}
-                        className="mt-3 w-full"
-                      >
-                        <img
-                          src={r.fotoUrl}
-                          alt="Foto da execução"
-                          className="w-full rounded-2xl object-cover max-h-48"
-                        />
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

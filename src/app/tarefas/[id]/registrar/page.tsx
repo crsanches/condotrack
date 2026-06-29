@@ -12,7 +12,17 @@ import {
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { storage } from '@/lib/firebase'
 import { Timestamp } from 'firebase/firestore'
-import type { TarefaPeriodica, Responsavel } from '@/types'
+import type { TarefaPeriodica, Responsavel, NaoConformidadeTipo, Priority } from '@/types'
+import { NAO_CONFORMIDADE_LABELS } from '@/types'
+
+const NC_TIPOS: NaoConformidadeTipo[] = [
+  'equipamento_defeito',
+  'falta_material',
+  'servico_incompleto',
+  'acesso_negado',
+  'fora_do_prazo',
+  'outro',
+]
 
 export default function RegistrarTarefaPage() {
   const router = useRouter()
@@ -31,6 +41,12 @@ export default function RegistrarTarefaPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Conformidade
+  const [conforme, setConforme] = useState<boolean | null>(null)
+  const [ncTipo, setNcTipo] = useState<NaoConformidadeTipo | ''>('')
+  const [ncPrioridade, setNcPrioridade] = useState<Priority | ''>('')
+  const [ncDetalhe, setNcDetalhe] = useState('')
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
@@ -58,9 +74,22 @@ export default function RegistrarTarefaPage() {
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
+  function handleSetConforme(value: boolean) {
+    setConforme(value)
+    if (value) {
+      // limpa campos de NC ao marcar conforme
+      setNcTipo('')
+      setNcPrioridade('')
+      setNcDetalhe('')
+    }
+  }
+
   async function handleSave() {
     if (!responsavelId) { setError('Selecione o responsável.'); return }
     if (!dataRealizacao) { setError('Informe a data de realização.'); return }
+    if (conforme === null) { setError('Informe se a execução está em conformidade.'); return }
+    if (conforme === false && !ncTipo) { setError('Selecione o tipo de não conformidade.'); return }
+    if (conforme === false && !ncPrioridade) { setError('Selecione a prioridade da não conformidade.'); return }
     if (!tarefa || !user) return
 
     setSaving(true)
@@ -89,7 +118,13 @@ export default function RegistrarTarefaPage() {
         responsavelId,
         responsavelNome: responsavel?.nome || '',
         observacao: observacao.trim() || undefined,
-        ...(fotoUrl ? { fotoUrl } : {}),  // ← só inclui se existir
+        ...(fotoUrl ? { fotoUrl } : {}),
+        conforme: conforme!,
+        ...(conforme === false ? {
+          naoConformidadeTipo: ncTipo as NaoConformidadeTipo,
+          naoConformidadePrioridade: ncPrioridade as Priority,
+          ...(ncDetalhe.trim() ? { naoConformidadeDetalhe: ncDetalhe.trim() } : {}),
+        } : {}),
       })
 
       router.replace(`/tarefas/${tarefa.id}`)
@@ -162,6 +197,111 @@ export default function RegistrarTarefaPage() {
               placeholder="Descreva como foi a execução, problemas encontrados..."
             />
           </div>
+        </div>
+
+        {/* CONFORMIDADE */}
+        <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
+          <h2 className="font-semibold text-gray-800 mb-4">✅ Conformidade *</h2>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handleSetConforme(true)}
+              className={`
+                h-16 rounded-2xl border-2 flex flex-col items-center justify-center gap-1
+                text-sm font-medium transition-all
+                ${conforme === true
+                  ? 'bg-green-600 border-green-600 text-white'
+                  : 'bg-white border-gray-200 text-gray-500'}
+              `}
+            >
+              <span className="text-xl">✅</span>
+              <span>Conforme</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSetConforme(false)}
+              className={`
+                h-16 rounded-2xl border-2 flex flex-col items-center justify-center gap-1
+                text-sm font-medium transition-all
+                ${conforme === false
+                  ? 'bg-red-600 border-red-600 text-white'
+                  : 'bg-white border-gray-200 text-gray-500'}
+              `}
+            >
+              <span className="text-xl">⚠️</span>
+              <span>Não conforme</span>
+            </button>
+          </div>
+
+          {/* Seção expandida de não conformidade */}
+          {conforme === false && (
+            <div className="mt-5 space-y-4">
+
+              {/* Tipo */}
+              <div>
+                <label className="field-label mb-2">Tipo de não conformidade *</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {NC_TIPOS.map(tipo => (
+                    <button
+                      key={tipo}
+                      type="button"
+                      onClick={() => setNcTipo(tipo)}
+                      className={`
+                        text-left px-3 py-2.5 rounded-2xl border-2 text-xs font-medium transition-all
+                        ${ncTipo === tipo
+                          ? 'bg-[#1a2744] border-[#1a2744] text-white'
+                          : 'bg-white border-gray-200 text-gray-600'}
+                      `}
+                    >
+                      {NAO_CONFORMIDADE_LABELS[tipo]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Prioridade */}
+              <div>
+                <label className="field-label mb-2">Prioridade *</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(
+                    [
+                      ['alta',  '🔴', 'Alta',  'border-red-200 bg-red-50 text-red-700',    'bg-red-600 border-red-600 text-white'],
+                      ['media', '🟡', 'Média', 'border-amber-200 bg-amber-50 text-amber-700', 'bg-amber-500 border-amber-500 text-white'],
+                      ['baixa', '🟢', 'Baixa', 'border-green-200 bg-green-50 text-green-700', 'bg-green-600 border-green-600 text-white'],
+                    ] as const
+                  ).map(([val, icon, label, inactiveCls, activeCls]) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setNcPrioridade(val)}
+                      className={`
+                        h-16 rounded-2xl border-2 flex flex-col items-center justify-center gap-1
+                        text-sm font-medium transition-all
+                        ${ncPrioridade === val ? activeCls : inactiveCls}
+                      `}
+                    >
+                      <span>{icon}</span>
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Detalhe */}
+              <div>
+                <label className="field-label">Registro complementar</label>
+                <textarea
+                  className="form-input min-h-[100px] resize-none"
+                  value={ncDetalhe}
+                  onChange={e => setNcDetalhe(e.target.value)}
+                  placeholder="Descreva a não conformidade com mais detalhes..."
+                />
+              </div>
+
+            </div>
+          )}
         </div>
 
         {/* FOTO */}

@@ -58,6 +58,7 @@ export default function DashboardPage() {
   if (loading || !user) return null
 
   const initials = user.name.split(' ').map((w: string) => w[0]).join('').slice(0, 2).toUpperCase()
+  const canSeeReports = ['sindico', 'subsindico', 'conselheiro'].includes(user.role)
 
   const settingsMenu = (
     <div className="relative">
@@ -110,8 +111,8 @@ export default function DashboardPage() {
                 <p className="text-white/70 text-sm">Bem-vindo</p>
                 <h1 className="text-xl font-bold">{user.name}</h1>
                 <p className="text-sm text-white/80">
-                {ROLE_LABELS[user.role] ?? user.role}   
-               </p>
+                  {ROLE_LABELS[user.role] ?? user.role}
+                </p>
               </div>
             </div>
           </div>
@@ -231,28 +232,18 @@ export default function DashboardPage() {
               <div className="font-semibold text-gray-800">Orçamentos</div>
               <div className="text-xs text-gray-500 mt-1">Cotações e contratações</div>
             </button>
-  {/* botao atualizar */}
-  {/* 
-            <button
-              onClick={() => router.push('/demands?mode=update')}
-              className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
-            >
-              <div className="text-4xl mb-3">✏️</div>
-              <div className="font-semibold text-gray-800">Atualizar</div>
-              <div className="text-xs text-gray-500 mt-1">Registrar andamento</div>
-            </button>
-*/}
-  {/* botao excluir */}
-  {/* 
-            <button
-              onClick={() => router.push('/demands?mode=delete')}
-              className="bg-amber-50 rounded-3xl p-5 border border-amber-200 text-left"
-            >
-              <div className="text-4xl mb-3">🗑️</div>
-              <div className="font-semibold text-amber-700">Excluir</div>
-              <div className="text-xs text-amber-600 mt-1">Remover demanda</div>
-            </button>
-*/}
+
+            {canSeeReports && (
+              <button
+                onClick={() => router.push('/relatorios')}
+                className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
+              >
+                <div className="text-4xl mb-3">🖊️📖✏️📚</div>
+                <div className="font-semibold text-gray-800">Relatórios</div>
+                <div className="text-xs text-gray-500 mt-1">Listas e consultas</div>
+              </button>
+            )}
+
           </div>
         </div>
 

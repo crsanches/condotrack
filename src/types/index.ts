@@ -133,6 +133,23 @@ export interface TarefaPeriodica {
 
 export type StatusTarefa = 'em_dia' | 'vence_hoje' | 'atrasada' | 'nunca_executada'
 
+export type NaoConformidadeTipo =
+  | 'equipamento_defeito'
+  | 'falta_material'
+  | 'servico_incompleto'
+  | 'acesso_negado'
+  | 'fora_do_prazo'
+  | 'outro'
+
+export const NAO_CONFORMIDADE_LABELS: Record<NaoConformidadeTipo, string> = {
+  equipamento_defeito: 'Equipamento com defeito',
+  falta_material:      'Falta de material',
+  servico_incompleto:  'Serviço incompleto',
+  acesso_negado:       'Acesso negado',
+  fora_do_prazo:       'Fora do prazo',
+  outro:               'Outro',
+}
+
 export interface RegistroTarefa {
   id: string
   tarefaId: string
@@ -143,6 +160,11 @@ export interface RegistroTarefa {
   observacao?: string
   fotoUrl?: string
   criadoEm: Timestamp
+  // Conformidade
+  conforme: boolean
+  naoConformidadeTipo?: NaoConformidadeTipo
+  naoConformidadePrioridade?: Priority
+  naoConformidadeDetalhe?: string
 }
 
 // ── Contratos ──────────────────────────────────────────────────────
