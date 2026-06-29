@@ -127,7 +127,7 @@ export default function RegistrarTarefaPage() {
         } : {}),
       })
 
-      router.replace(`/tarefas/${tarefa.id}`)
+      router.replace(`/tarefas`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Erro ao salvar.')
     } finally {
@@ -306,7 +306,7 @@ export default function RegistrarTarefaPage() {
 
         {/* FOTO */}
         <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
-          <h2 className="font-semibold text-gray-800 mb-4">📷 Foto (opcional)</h2>
+          <h2 className="font-semibold text-gray-800 mb-4">📷 Foto (opcional -ainda não liberado)</h2>
 
           {fotoPreview ? (
             <div className="relative">
