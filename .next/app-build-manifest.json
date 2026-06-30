@@ -21,15 +21,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/tarefas/page": [
+    "/patrimonios/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/page.js"
+      "static/chunks/app/patrimonios/page.js"
     ],
-    "/tarefas/[id]/registrar/page": [
+    "/patrimonios/[id]/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/tarefas/[id]/registrar/page.js"
+      "static/chunks/app/patrimonios/[id]/page.js"
+    ],
+    "/relatorios/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/relatorios/page.js"
     ],
     "/_not-found/page": [
       "static/chunks/webpack.js",

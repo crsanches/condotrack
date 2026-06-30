@@ -237,3 +237,84 @@ export interface Cotacao {
   criadoPor: string
   criadoEm: Timestamp
 }
+
+// ── Patrimônio ──────────────────────────────────────────────────────
+
+export type EstadoConservacao = 'Ótimo' | 'Bom' | 'Regular' | 'Ruim'
+
+export interface Patrimonio {
+  id: string
+  condominioId: string
+
+  // Identificação
+  nome: string
+  numeroSerie?: string
+  categoria: string
+  modelo?: string
+  setor: string
+
+  // Financeiro / temporal
+  dataCompra?: Timestamp
+  valorCompra?: number
+  valorAtual?: number
+  vidaUtilAnos?: number
+
+  // Estado
+  estadoConservacao: EstadoConservacao
+
+  // Contrato de manutenção
+  possuiContrato: boolean
+  contratoIds: string[]
+
+  // Extra
+  observacoes?: string
+
+  criadoEm: Timestamp
+  atualizadoEm: Timestamp
+}
+
+export type PatrimonioFormData = Omit<Patrimonio, 'id' | 'criadoEm' | 'atualizadoEm' | 'condominioId'>
+
+// Opções gerenciáveis por condomínio
+export interface PatrimonioOpcoes {
+  id: string // = condominioId
+  categorias: string[]
+  setores: string[]
+}
+
+export const CATEGORIAS_DEFAULT = [
+  'Mobiliário',
+  'Equipamento Elétrico',
+  'Equipamento de Segurança',
+  'Ferramenta',
+  'Veículo',
+  'TI / Informática',
+  'Hidráulico',
+  'Elevador',
+  'Climatização',
+  'Estrutura',
+  'Outro',
+]
+
+export const SETORES_DEFAULT = [
+  'Portaria',
+  'Salão de Festas',
+  'Piscina',
+  'Jardim / Área Externa',
+  'Academia',
+  'Subsolo / Garagem',
+  'Cobertura',
+  'Hall / Circulação',
+  'Administração',
+  'Playground',
+  'Outro',
+]
+
+export const ESTADOS_CONSERVACAO: EstadoConservacao[] = ['Ótimo', 'Bom', 'Regular', 'Ruim']
+
+export const ESTADO_CONSERVACAO_COLOR: Record<EstadoConservacao, string> = {
+  Ótimo: 'bg-green-100 text-green-800',
+  Bom: 'bg-blue-100 text-blue-800',
+  Regular: 'bg-yellow-100 text-yellow-800',
+  Ruim: 'bg-red-100 text-red-800',
+}

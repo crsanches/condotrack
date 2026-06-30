@@ -233,6 +233,15 @@ export default function DashboardPage() {
               <div className="text-xs text-gray-500 mt-1">Cotações e contratações</div>
             </button>
 
+            <button
+            onClick={() => router.push('/patrimonios')}
+            className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
+          >
+            <div className="text-4xl mb-3">🏛️</div>
+            <div className="font-semibold text-gray-800">Patrimônio</div>
+            <div className="text-xs text-gray-500 mt-1">Inventário de bens</div>
+          </button>
+
             {canSeeReports && (
               <button
                 onClick={() => router.push('/relatorios')}
