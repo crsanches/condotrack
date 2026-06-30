@@ -114,15 +114,18 @@ export interface ContratoResumo {
 export async function getContratosAtivos(): Promise<ContratoResumo[]> {
   const q = query(
     collection(db, 'contratos'),
-    orderBy('titulo', 'asc')
+    orderBy('fornecedor', 'asc')
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({
-    id: d.id,
-    titulo: d.data().titulo ?? '(sem título)',
-    fornecedor: d.data().fornecedor,
-    status: d.data().status,
-  }))
+  return snap.docs.map(d => {
+    const data = d.data()
+    return {
+      id: d.id,
+      titulo: data.objeto ?? data.titulo ?? '(sem descrição)',
+      fornecedor: data.fornecedor,
+      status: data.status,
+    }
+  })
 }
 
 // ─── Utilitários ─────────────────────────────────────────────────────────────
