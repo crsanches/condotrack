@@ -47,7 +47,7 @@ export async function GET() {
   const mantidos: string[] = []
   const ignoradosPorEdicao: string[] = []
 
-  for (const [nome, docs] of grupos) {
+  for (const [nome, docs] of Array.from(grupos.entries())) {
     if (docs.length <= 1) {
       mantidos.push(nome)
       continue
