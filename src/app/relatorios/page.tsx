@@ -59,6 +59,18 @@ const GRUPOS: {
       { slug: 'fornecedores', label: 'Fornecedores', descricao: 'Extraído de contratos e cotações' },
     ],
   },
+
+  {
+    titulo: 'Patrimônio',
+    emoji: '🏛️',
+    itens: [
+      { slug: 'patrimonio-geral',          label: 'Lista geral de bens',         descricao: 'Nome, categoria, setor e estado de conservação' },
+      { slug: 'patrimonio-com-contrato',    label: 'Bens com contrato vinculado', descricao: 'Contrato associado e data de vencimento' },
+      { slug: 'patrimonio-sem-contrato',    label: 'Bens sem contrato',           descricao: 'Itens sem manutenção contratada' },
+      { slug: 'patrimonio-conservacao',     label: 'Conservação crítica',         descricao: 'Bens em estado Regular ou Ruim' },
+      { slug: 'patrimonio-valor-setor',     label: 'Valor por setor',             descricao: 'Soma do valor atual agrupado por setor' },
+    ],
+  },
 ]
 
 export default function RelatoriosPage() {

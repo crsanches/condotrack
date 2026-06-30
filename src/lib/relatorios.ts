@@ -19,6 +19,12 @@ import type {
 } from '@/types'
 import { calcularStatusTarefa } from './firestore'
 
+import type { Patrimonio } from '@/types'
+
+
+
+
+
 // ── Helpers ───────────────────────────────────────────────────────
 
 export function timestampToDate(ts: unknown): Date {
@@ -366,4 +372,111 @@ export async function relDemandasParadas(acessoSigilo = false, diasSemUpdate = 1
       const bUlt = (b.atualizacoes ?? []).at(-1)
       return timestampToDate(aUlt?.data).getTime() - timestampToDate(bUlt?.data).getTime()
     })
+}
+
+// ── Relatorios de patrimonio ──────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Adicionar este bloco ao arquivo @/lib/relatorios.ts existente
+// ─────────────────────────────────────────────────────────────────────────────
+
+
+// Reaproveita o resumo de contrato já usado no módulo de patrimônio
+export interface ContratoVinculoResumo {
+  id: string
+  fornecedor: string
+  objeto: string
+  dataVencimento: unknown
+  status: string
+}
+
+export interface PatrimonioComContrato {
+  patrimonio: Patrimonio
+  contrato: ContratoVinculoResumo | null
+}
+
+export interface ValorPorSetor {
+  setor: string
+  totalItens: number
+  valorTotal: number
+}
+
+// ── 1. Lista geral de bens ────────────────────────────────────────────────────
+export async function relPatrimonioGeral(): Promise<Patrimonio[]> {
+  const q = query(collection(db, 'patrimonios'), orderBy('nome', 'asc'))
+  const snap = await getDocs(q)
+  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Patrimonio))
+}
+
+// ── 2. Bens com contrato vinculado (+ vencimento) ─────────────────────────────
+export async function relPatrimonioComContrato(): Promise<PatrimonioComContrato[]> {
+  const [patrimoniosSnap, contratosSnap] = await Promise.all([
+    getDocs(query(collection(db, 'patrimonios'), orderBy('nome', 'asc'))),
+    getDocs(collection(db, 'contratos')),
+  ])
+
+  const contratosMap = new Map<string, ContratoVinculoResumo>()
+  contratosSnap.docs.forEach(d => {
+    const data = d.data()
+    contratosMap.set(d.id, {
+      id: d.id,
+      fornecedor: data.fornecedor ?? '—',
+      objeto: data.objeto ?? '—',
+      dataVencimento: data.dataVencimento,
+      status: data.status ?? '—',
+    })
+  })
+
+  const resultado: PatrimonioComContrato[] = []
+  patrimoniosSnap.docs.forEach(d => {
+    const patrimonio = { id: d.id, ...d.data() } as Patrimonio
+    if (patrimonio.possuiContrato && patrimonio.contratoIds?.length) {
+      patrimonio.contratoIds.forEach(cid => {
+        const contrato = contratosMap.get(cid) ?? null
+        resultado.push({ patrimonio, contrato })
+      })
+    }
+  })
+
+  return resultado
+}
+
+// ── 3. Bens sem contrato ──────────────────────────────────────────────────────
+export async function relPatrimonioSemContrato(): Promise<Patrimonio[]> {
+  const q = query(collection(db, 'patrimonios'), orderBy('nome', 'asc'))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Patrimonio))
+    .filter(p => !p.possuiContrato || !p.contratoIds?.length)
+}
+
+// ── 4. Estado de conservação crítico (Regular / Ruim) ─────────────────────────
+export async function relPatrimonioConservacaoCritica(): Promise<Patrimonio[]> {
+  const q = query(collection(db, 'patrimonios'), orderBy('nome', 'asc'))
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Patrimonio))
+    .filter(p => p.estadoConservacao === 'Regular' || p.estadoConservacao === 'Ruim')
+    .sort((a, b) => {
+      // Ruim primeiro, depois Regular
+      const peso = { Ruim: 0, Regular: 1, Bom: 2, Ótimo: 3 } as Record<string, number>
+      return (peso[a.estadoConservacao] ?? 9) - (peso[b.estadoConservacao] ?? 9)
+    })
+}
+
+// ── 5. Valor patrimonial agrupado por setor ───────────────────────────────────
+export async function relPatrimonioValorPorSetor(): Promise<ValorPorSetor[]> {
+  const q = query(collection(db, 'patrimonios'), orderBy('setor', 'asc'))
+  const snap = await getDocs(q)
+  const grupos = new Map<string, ValorPorSetor>()
+
+  snap.docs.forEach(d => {
+    const p = { id: d.id, ...d.data() } as Patrimonio
+    const atual = grupos.get(p.setor) ?? { setor: p.setor, totalItens: 0, valorTotal: 0 }
+    atual.totalItens += 1
+    atual.valorTotal += p.valorAtual ?? 0
+    grupos.set(p.setor, atual)
+  })
+
+  return Array.from(grupos.values()).sort((a, b) => b.valorTotal - a.valorTotal)
 }

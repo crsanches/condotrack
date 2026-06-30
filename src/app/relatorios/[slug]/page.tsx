@@ -27,8 +27,15 @@ import {
   type FornecedorItem,
   type TarefaComStatus,
   type RegistroNaoConforme,
+  relPatrimonioGeral,
+  relPatrimonioComContrato,
+  relPatrimonioSemContrato,
+  relPatrimonioConservacaoCritica,
+  relPatrimonioValorPorSetor,
+  type PatrimonioComContrato,
+  type ValorPorSetor,
 } from '@/lib/relatorios'
-import type { CondoUser, Responsavel, Contrato, Orcamento, Demand } from '@/types'
+import type { CondoUser, Responsavel, Contrato, Orcamento, Demand,Patrimonio } from '@/types'
 import {
   ROLE_LABELS,
   PRIORITY_LABELS,
@@ -36,6 +43,7 @@ import {
   TIPO_LABELS,
   NAO_CONFORMIDADE_LABELS,
 } from '@/types'
+import { ESTADO_CONSERVACAO_COLOR } from '@/types'
 
 // ── Helpers de formatação ─────────────────────────────────────────
 
@@ -84,6 +92,11 @@ const TITULOS: Record<string, string> = {
   'demandas-responsavel':         'Demandas — por responsável',
   'demandas-vencimento':          'Demandas — por vencimento',
   'demandas-paradas':             'Demandas paradas (+15 dias)',
+  'patrimonio-geral':       'Patrimônio — Lista geral',
+'patrimonio-com-contrato':'Patrimônio — Com contrato vinculado',
+'patrimonio-sem-contrato':'Patrimônio — Sem contrato',
+'patrimonio-conservacao': 'Patrimônio — Conservação crítica',
+'patrimonio-valor-setor': 'Patrimônio — Valor por setor',
 }
 
 const COM_PERIODO = new Set([
@@ -409,6 +422,136 @@ function ListaDemandas({ dados, router }: { dados: Demand[]; router: ReturnType<
   )
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Copiar estes componentes para dentro da página /relatorios/[slug]
+// junto aos demais (ListaUsuarios, ListaContratos, etc)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function BadgeConservacao({ estado }: { estado: string }) {
+  const cls = ESTADO_CONSERVACAO_COLOR[estado as keyof typeof ESTADO_CONSERVACAO_COLOR] ?? 'bg-gray-100 text-gray-600'
+  return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${cls}`}>{estado}</span>
+}
+
+// 1. Lista geral de bens
+function ListaPatrimonioGeral({ dados, router }: { dados: Patrimonio[]; router: ReturnType<typeof useRouter> }) {
+  if (!dados.length) return <Vazio />
+  return (
+    <>
+      <Cabecalho cols={['Nome', 'Categoria', 'Setor', 'Conservação']} />
+      {dados.map(p => (
+        <Linha key={p.id} onClick={() => router.push(`/patrimonios/${p.id}`)}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{p.nome}</p>
+            {p.numeroSerie && <p className="text-xs text-gray-400 truncate">Nº {p.numeroSerie}</p>}
+          </div>
+          <span className="text-xs text-gray-500 shrink-0">{p.categoria}</span>
+          <span className="text-xs text-gray-500 shrink-0">{p.setor}</span>
+          <BadgeConservacao estado={p.estadoConservacao} />
+        </Linha>
+      ))}
+    </>
+  )
+}
+
+// 2. Bens com contrato vinculado
+function ListaPatrimonioComContrato({ dados, router }: { dados: PatrimonioComContrato[]; router: ReturnType<typeof useRouter> }) {
+  if (!dados.length) return <Vazio />
+  return (
+    <>
+      <Cabecalho cols={['Bem', 'Contrato', 'Vencimento']} />
+      {dados.map((item, i) => {
+        const vencido = item.contrato ? isVencido(item.contrato.dataVencimento) : false
+        return (
+          <Linha key={`${item.patrimonio.id}-${item.contrato?.id ?? i}`} onClick={() => router.push(`/patrimonios/${item.patrimonio.id}`)}>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 truncate">{item.patrimonio.nome}</p>
+              <p className="text-xs text-gray-400 truncate">{item.patrimonio.setor}</p>
+            </div>
+            <div className="text-right shrink-0 min-w-0">
+              {item.contrato ? (
+                <>
+                  <p className="text-xs font-medium text-gray-700 truncate max-w-[140px]">{item.contrato.fornecedor}</p>
+                  <p className="text-xs text-gray-400 truncate max-w-[140px]">{item.contrato.objeto}</p>
+                </>
+              ) : (
+                <p className="text-xs text-amber-600">Contrato não encontrado</p>
+              )}
+            </div>
+            {item.contrato && (
+              <span className={`text-xs font-medium shrink-0 ${vencido ? 'text-red-600' : 'text-gray-600'}`}>
+                {fmtDate(item.contrato.dataVencimento)}
+              </span>
+            )}
+          </Linha>
+        )
+      })}
+    </>
+  )
+}
+
+// 3. Bens sem contrato
+function ListaPatrimonioSemContrato({ dados, router }: { dados: Patrimonio[]; router: ReturnType<typeof useRouter> }) {
+  if (!dados.length) return <Vazio />
+  return (
+    <>
+      <Cabecalho cols={['Nome', 'Categoria', 'Setor']} />
+      {dados.map(p => (
+        <Linha key={p.id} onClick={() => router.push(`/patrimonios/${p.id}`)}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{p.nome}</p>
+          </div>
+          <span className="text-xs text-gray-500 shrink-0">{p.categoria}</span>
+          <span className="text-xs text-gray-500 shrink-0">{p.setor}</span>
+        </Linha>
+      ))}
+    </>
+  )
+}
+
+// 4. Conservação crítica
+function ListaPatrimonioConservacao({ dados, router }: { dados: Patrimonio[]; router: ReturnType<typeof useRouter> }) {
+  if (!dados.length) return <Vazio />
+  return (
+    <>
+      <Cabecalho cols={['Nome', 'Categoria', 'Setor', 'Estado']} />
+      {dados.map(p => (
+        <Linha key={p.id} onClick={() => router.push(`/patrimonios/${p.id}`)}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{p.nome}</p>
+          </div>
+          <span className="text-xs text-gray-500 shrink-0">{p.categoria}</span>
+          <span className="text-xs text-gray-500 shrink-0">{p.setor}</span>
+          <BadgeConservacao estado={p.estadoConservacao} />
+        </Linha>
+      ))}
+    </>
+  )
+}
+
+// 5. Valor por setor (agregado, sem clique)
+function ListaPatrimonioValorSetor({ dados }: { dados: ValorPorSetor[] }) {
+  if (!dados.length) return <Vazio />
+  const totalGeral = dados.reduce((acc, d) => acc + d.valorTotal, 0)
+  return (
+    <>
+      <Cabecalho cols={['Setor', 'Itens', 'Valor total']} />
+      {dados.map(d => (
+        <Linha key={d.setor}>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{d.setor}</p>
+          </div>
+          <span className="text-xs text-gray-500 shrink-0">{d.totalItens} {d.totalItens === 1 ? 'item' : 'itens'}</span>
+          <span className="text-sm font-semibold text-gray-800 shrink-0">{fmtMoeda(d.valorTotal)}</span>
+        </Linha>
+      ))}
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+        <span className="text-xs font-semibold text-gray-500 uppercase">Total geral</span>
+        <span className="text-sm font-bold text-gray-900">{fmtMoeda(totalGeral)}</span>
+      </div>
+    </>
+  )
+}
+
 // ── Filtros ───────────────────────────────────────────────────────
 
 function FiltroPeriodo({ value, onChange }: { value: string; onChange: (v: string) => void }) {
@@ -520,6 +663,11 @@ export default function RelatorioSlugPage() {
         case 'demandas-responsavel':         resultado = await relDemandasPorResponsavel(acessoSigilo, periodo || undefined); break
         case 'demandas-vencimento':          resultado = await relDemandasPorVencimento(acessoSigilo); break
         case 'demandas-paradas':             resultado = await relDemandasParadas(acessoSigilo); break
+        case 'patrimonio-geral':         resultado = await relPatrimonioGeral(); break
+        case 'patrimonio-com-contrato':  resultado = await relPatrimonioComContrato(); break
+        case 'patrimonio-sem-contrato':  resultado = await relPatrimonioSemContrato(); break
+        case 'patrimonio-conservacao':   resultado = await relPatrimonioConservacaoCritica(); break
+        case 'patrimonio-valor-setor':   resultado = await relPatrimonioValorPorSetor(); break
       }
       setDados(resultado)
     } finally {
@@ -573,6 +721,16 @@ export default function RelatorioSlugPage() {
       case 'demandas-vencimento':
       case 'demandas-paradas':
         return <ListaDemandas dados={dados as Demand[]} {...props} />
+        case 'patrimonio-geral':
+          return <ListaPatrimonioGeral dados={dados as Patrimonio[]} {...props} />
+        case 'patrimonio-com-contrato':
+          return <ListaPatrimonioComContrato dados={dados as PatrimonioComContrato[]} {...props} />
+        case 'patrimonio-sem-contrato':
+          return <ListaPatrimonioSemContrato dados={dados as Patrimonio[]} {...props} />
+        case 'patrimonio-conservacao':
+          return <ListaPatrimonioConservacao dados={dados as Patrimonio[]} {...props} />
+        case 'patrimonio-valor-setor':
+          return <ListaPatrimonioValorSetor dados={dados as ValorPorSetor[]} />
       default:
         return <Vazio />
     }

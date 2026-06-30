@@ -54,8 +54,12 @@ export async function updatePatrimonio(
   id: string,
   data: Partial<PatrimonioFormData>
 ): Promise<void> {
+  // Remove campos undefined (Firestore não aceita undefined em updateDoc)
+  const limpo = Object.fromEntries(
+    Object.entries(data).filter(([, v]) => v !== undefined)
+  )
   await updateDoc(doc(db, 'patrimonios', id), {
-    ...data,
+    ...limpo,
     atualizadoEm: serverTimestamp(),
   })
 }
