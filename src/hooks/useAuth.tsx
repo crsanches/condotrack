@@ -24,8 +24,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsub = onAuthChange(async (firebaseUser) => {
       if (firebaseUser) {
-        const condoUser = await getUser(firebaseUser.uid)
-        setUser(condoUser)
+        try {
+          const condoUser = await getUser(firebaseUser.uid)
+          setUser(condoUser)
+        } catch (err) {
+          console.error('Erro ao buscar usuário:', err)
+          setUser(null)
+        }
       } else {
         setUser(null)
       }

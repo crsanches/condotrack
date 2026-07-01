@@ -633,7 +633,7 @@ export default function RelatorioSlugPage() {
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
     if (!loading && user) {
-      const allowed = ['sindico', 'subsindico', 'conselheiro']
+      const allowed = ['sindico', 'subsindico', 'conselheiro', 'super_admin']
       if (!allowed.includes(user.role)) router.replace('/dashboard')
     }
   }, [user, loading, router])

@@ -1,7 +1,6 @@
 {
+  "/auth/page": "app/auth/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/tarefas/nova/page": "app/tarefas/nova/page.js",
-  "/conta/page": "app/conta/page.js",
-  "/patrimonios/novo/page": "app/patrimonios/novo/page.js",
-  "/auth/page": "app/auth/page.js"
+  "/relatorios/page": "app/relatorios/page.js",
+  "/relatorios/[slug]/page": "app/relatorios/[slug]/page.js"
 }
