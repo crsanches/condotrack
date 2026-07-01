@@ -27,19 +27,18 @@ export default function PatrimoniosPage() {
   const podeGerenciar = PODE_CRIAR.includes(user?.role ?? '')
 
   const carregar = useCallback(async () => {
-    
+    if (!user?.condominioId) return
     setLoading(true)
     try {
-      const data = await getPatrimonios()
+      const data = await getPatrimonios(user.condominioId)
       setPatrimonios(data)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user?.condominioId])
 
   useEffect(() => { carregar() }, [carregar])
 
-  // Categorias distintas para filtro
   const categorias = Array.from(new Set(patrimonios.map(p => p.categoria))).sort()
 
   const filtrados = patrimonios.filter(p => {
@@ -68,38 +67,38 @@ export default function PatrimoniosPage() {
       <Header
         title="Patrimônio"
         showBack
-        
+        backHref="/dashboard"
         rightAction={
-            podeGerenciar ? (
-              <button
-                onClick={() => router.push('/patrimonios/novo')}
-                className="flex items-center gap-1.5 text-sm font-medium bg-blue-600 text-white px-3 py-2 rounded-xl"
-              >
-                <Plus className="w-4 h-4" />
-                Novo Bem
-              </button>
-            ) : undefined
-          }
+          podeGerenciar ? (
+            <button
+              onClick={() => router.push('/patrimonios/novo')}
+              className="flex items-center gap-1.5 text-sm font-medium bg-blue-600 text-white px-3 py-2 rounded-xl"
+            >
+              <Plus className="w-4 h-4" />
+              Novo Bem
+            </button>
+          ) : undefined
+        }
       />
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-4">
 
-        {/* Filtros */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Buscar por nome, série, modelo, setor…"
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, série, modelo, setor…"
+            value={busca}
+            onChange={e => setBusca(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div className="flex flex-col sm:flex-row gap-3">
           <select
             value={filtroCategoria}
             onChange={e => setFiltroCategoria(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Todas as categorias</option>
             {categorias.map(c => <option key={c}>{c}</option>)}
@@ -107,7 +106,7 @@ export default function PatrimoniosPage() {
           <select
             value={filtroEstado}
             onChange={e => setFiltroEstado(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Todos os estados</option>
             {['Ótimo', 'Bom', 'Regular', 'Ruim'].map(e => (
@@ -115,8 +114,8 @@ export default function PatrimoniosPage() {
             ))}
           </select>
         </div>
+      </div>
 
-        {/* Contadores */}
         {!loading && (
           <p className="text-sm text-gray-500">
             {filtrados.length} {filtrados.length === 1 ? 'bem encontrado' : 'bens encontrados'}
@@ -124,7 +123,6 @@ export default function PatrimoniosPage() {
           </p>
         )}
 
-        {/* Tabela */}
         {loading ? (
           <div className="text-center py-16 text-gray-400">Carregando…</div>
         ) : filtrados.length === 0 ? (

@@ -28,11 +28,10 @@ export default function DemandDetailPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (id) {
-      getDemand(id).then(setDemand)
-      getAllUsers().then(setUsers)
-    }
-  }, [id])
+    if (!id || !user?.condominioId) return
+    getDemand(id).then(setDemand)
+    getAllUsers(user.condominioId).then(setUsers)
+  }, [id, user?.condominioId])
 
   const formatDate = (ts: unknown) => {
     if (!ts) return '—'

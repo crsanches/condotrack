@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Header from '@/components/layout/Header'
-import { getDemandStats, getRecentDemands, getAllTarefas, getUltimoRegistro, calcularStatusTarefa } from '@/lib/firestore'
-import type { Demand } from '@/types'
+import { getDemandStats, getRecentDemands, getAllTarefas, getUltimoRegistro, calcularStatusTarefa, getCondominio } from '@/lib/firestore'
+import type { Demand, Condominio } from '@/types'
 import { ROLE_LABELS } from '@/types'
 
 interface Stats { total: number; abertas: number; em_andamento: number; concluidas: number }
@@ -29,20 +29,22 @@ export default function DashboardPage() {
   const [recentDemands, setRecentDemands] = useState<Demand[]>([])
   const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [condominio, setCondominio] = useState<Condominio | null>(null)
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!user) return
-    getDemandStats().then(setStats)
-    getRecentDemands(5).then(setRecentDemands)
-    loadTarefasStatus()
-  }, [user])
+    if (!user?.condominioId) return
+    getDemandStats(user.condominioId).then(setStats)
+    getRecentDemands(user.condominioId, 5).then(setRecentDemands)
+    loadTarefasStatus(user.condominioId)
+    getCondominio(user.condominioId).then(setCondominio)
+  }, [user?.condominioId])
 
-  async function loadTarefasStatus() {
-    const tarefas = await getAllTarefas()
+  async function loadTarefasStatus(condominioId: string) {
+    const tarefas = await getAllTarefas(condominioId)
     const ativas = tarefas.filter(t => t.ativo)
     const statuses = await Promise.all(
       ativas.map(async t => {
@@ -95,7 +97,17 @@ export default function DashboardPage() {
       <Header
         title="CondoTrack"
         showLogout
-        rightAction={user.role === 'sindico' ? settingsMenu : undefined}
+        rightAction={
+          user.role === 'sindico' ? settingsMenu :
+          user.role === 'super_admin' ? (
+            <button
+              onClick={() => router.push('/admin/plataforma/convites')}
+              className="text-xs font-medium bg-blue/20 text-blue px-3 py-2 rounded-xl whitespace-nowrap"
+            >
+              🔗 Convites
+            </button>
+          ) : undefined
+        }
       />
 
       <div className="min-h-screen bg-gray-50">
@@ -108,8 +120,11 @@ export default function DashboardPage() {
                 {initials}
               </div>
               <div>
-                <p className="text-white/70 text-sm">Bem-vindo</p>
+                
                 <h1 className="text-xl font-bold">{user.name}</h1>
+                {condominio && (
+                  <p className="text-sm text-white/90 mt-0.5">{condominio.nome}</p>
+                )}
                 <p className="text-sm text-white/80">
                   {ROLE_LABELS[user.role] ?? user.role}
                 </p>
@@ -234,13 +249,13 @@ export default function DashboardPage() {
             </button>
 
             <button
-            onClick={() => router.push('/patrimonios')}
-            className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
-          >
-            <div className="text-4xl mb-3">🏛️</div>
-            <div className="font-semibold text-gray-800">Patrimônio</div>
-            <div className="text-xs text-gray-500 mt-1">Inventário de bens</div>
-          </button>
+              onClick={() => router.push('/patrimonios')}
+              className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
+            >
+              <div className="text-4xl mb-3">🏛️</div>
+              <div className="font-semibold text-gray-800">Patrimônio</div>
+              <div className="text-xs text-gray-500 mt-1">Inventário de bens</div>
+            </button>
 
             {canSeeReports && (
               <button

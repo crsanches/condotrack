@@ -35,8 +35,9 @@ export default function NovoContratoPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    getAllResponsaveis().then(setResponsaveis)
-  }, [])
+    if (!user?.condominioId) return
+    getAllResponsaveis(user.condominioId).then(setResponsaveis)
+  }, [user?.condominioId])
 
   function formatCnpj(value: string) {
     const digits = value.replace(/\D/g, '').slice(0, 14)
@@ -53,6 +54,7 @@ export default function NovoContratoPage() {
     if (!dataInicio) { setError('Informe a data de início.'); return }
     if (!dataVencimento) { setError('Informe a data de vencimento.'); return }
     if (!responsavelId) { setError('Selecione o responsável interno.'); return }
+    if (!user?.condominioId) { setError('Condomínio não identificado.'); return }
 
     const responsavel = responsaveis.find(r => r.id === responsavelId)
     if (!responsavel) return
@@ -61,7 +63,7 @@ export default function NovoContratoPage() {
     setError('')
 
     try {
-      await createContrato({
+      await createContrato(user.condominioId, {
         fornecedor: fornecedor.trim(),
         cnpj: cnpj.trim() || undefined,
         objeto: objeto.trim(),

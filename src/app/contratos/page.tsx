@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import Header from '@/components/layout/Header'
-import { getAllContratos, updateContrato } from '@/lib/firestore'
+import { getAllContratos } from '@/lib/firestore'
 import type { Contrato, StatusContrato } from '@/types'
 
 const STATUS_CONFIG: Record<StatusContrato, { label: string; bg: string; text: string; border: string }> = {
@@ -59,14 +59,15 @@ export default function ContratosPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!user) return
+    if (!user?.condominioId) return
     load()
   }, [user])
 
   async function load() {
+    if (!user?.condominioId) return
     setLoadingData(true)
     try {
-      const data =  await getAllContratos(user?.acessoSigilo ?? false)
+      const data = await getAllContratos(user.condominioId, user?.acessoSigilo ?? false)
       setContratos(data)
     } finally {
       setLoadingData(false)
@@ -220,7 +221,6 @@ export default function ContratosPage() {
                       cfg.border}
                   `}
                 >
-                  {/* barra topo colorida */}
                   <div className={`h-1 ${
                     badge?.bg === 'bg-red-100'   ? 'bg-red-500'   :
                     badge?.bg === 'bg-amber-100' ? 'bg-amber-400' :

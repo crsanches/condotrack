@@ -16,7 +16,7 @@ export default function Header({
   showBack = false,
   showLogout = false,
   backHref,
-  rightAction,          // ← adicionar aqui
+  rightAction,
 }: HeaderProps) {
   const router = useRouter()
 
@@ -44,21 +44,34 @@ export default function Header({
           </button>
         )}
 
-        {/* LOGO */}
+        {/* LOGO + NOME DO APP */}
         {!showBack && (
-          <div className="w-9 h-9 rounded-xl bg-[#1a2744] text-white flex items-center justify-center mr-3 font-bold">
+          <div className="flex items-center gap-2 mr-3 flex-shrink-0">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-400 to-red-500 flex items-center justify-center text-lg">
+              🏙️
+            </div>
+            <span className="text-sm font-bold text-[#1a2744] whitespace-nowrap hidden sm:inline">
+              CondoTrack
+            </span>
           </div>
         )}
 
         {/* TÍTULO */}
-        <div className="flex-1 min-w-0">
-          <h1 className="text-base center font-semibold text-gray-900 truncate">
+        <div className="flex-1 min-w-0 text-center">
+          <h1 className="text-base font-semibold text-gray-900 truncate">
             {title}
           </h1>
         </div>
 
-        {/* DIREITA: rightAction + Sair */}
+        {/* DIREITA: conta + rightAction + Sair */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => router.push('/conta')}
+            title="Minha conta"
+            className="w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition-colors flex-shrink-0"
+          >
+            👤
+          </button>
           {rightAction}
           {showLogout && (
             <button

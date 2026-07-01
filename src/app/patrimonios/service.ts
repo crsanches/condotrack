@@ -7,6 +7,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   serverTimestamp,
   setDoc,
@@ -20,14 +21,14 @@ import {
   SETORES_DEFAULT,
 } from '@/types'
 
-const CONDO_ID = 'default'
-const opcoesDocRef = () => doc(db, 'patrimonioOpcoes', CONDO_ID)
+const opcoesDocRef = (condominioId: string) => doc(db, 'patrimonioOpcoes', condominioId)
 
 // ─── Patrimônios ─────────────────────────────────────────────────────────────
 
-export async function getPatrimonios(): Promise<Patrimonio[]> {
+export async function getPatrimonios(condominioId: string): Promise<Patrimonio[]> {
   const q = query(
     collection(db, 'patrimonios'),
+    where('condominioId', '==', condominioId),
     orderBy('nome', 'asc')
   )
   const snap = await getDocs(q)
@@ -40,9 +41,17 @@ export async function getPatrimonio(id: string): Promise<Patrimonio | null> {
   return { id: snap.id, ...snap.data() } as Patrimonio
 }
 
-export async function createPatrimonio(data: PatrimonioFormData): Promise<string> {
+export async function createPatrimonio(
+  condominioId: string,
+  data: PatrimonioFormData
+): Promise<string> {
+  // Remove campos undefined (Firestore não aceita undefined)
+  const limpo = Object.fromEntries(
+    Object.entries(data).filter(([, v]) => v !== undefined)
+  )
   const ref = await addDoc(collection(db, 'patrimonios'), {
-    ...data,
+    ...limpo,
+    condominioId,
     contratoIds: data.contratoIds ?? [],
     criadoEm: serverTimestamp(),
     atualizadoEm: serverTimestamp(),
@@ -70,19 +79,20 @@ export async function deletePatrimonio(id: string): Promise<void> {
 
 // ─── Opções (categorias + setores) ───────────────────────────────────────────
 
-export async function getPatrimonioOpcoes(): Promise<PatrimonioOpcoes> {
-  const snap = await getDoc(opcoesDocRef())
+export async function getPatrimonioOpcoes(condominioId: string): Promise<PatrimonioOpcoes> {
+  const snap = await getDoc(opcoesDocRef(condominioId))
   if (snap.exists()) return snap.data() as PatrimonioOpcoes
   const defaults: PatrimonioOpcoes = {
-    id: CONDO_ID,
+    id: condominioId,
     categorias: CATEGORIAS_DEFAULT,
     setores: SETORES_DEFAULT,
   }
-  await setDoc(opcoesDocRef(), defaults)
+  await setDoc(opcoesDocRef(condominioId), defaults)
   return defaults
 }
 
 export async function addCategoria(
+  condominioId: string,
   nova: string,
   opcoes: PatrimonioOpcoes
 ): Promise<PatrimonioOpcoes> {
@@ -90,11 +100,12 @@ export async function addCategoria(
     ...opcoes,
     categorias: [...opcoes.categorias, nova].sort(),
   }
-  await setDoc(opcoesDocRef(), updated)
+  await setDoc(opcoesDocRef(condominioId), updated)
   return updated
 }
 
 export async function addSetor(
+  condominioId: string,
   novo: string,
   opcoes: PatrimonioOpcoes
 ): Promise<PatrimonioOpcoes> {
@@ -102,7 +113,7 @@ export async function addSetor(
     ...opcoes,
     setores: [...opcoes.setores, novo].sort(),
   }
-  await setDoc(opcoesDocRef(), updated)
+  await setDoc(opcoesDocRef(condominioId), updated)
   return updated
 }
 
@@ -115,9 +126,10 @@ export interface ContratoResumo {
   status?: string
 }
 
-export async function getContratosAtivos(): Promise<ContratoResumo[]> {
+export async function getContratosAtivos(condominioId: string): Promise<ContratoResumo[]> {
   const q = query(
     collection(db, 'contratos'),
+    where('condominioId', '==', condominioId),
     orderBy('fornecedor', 'asc')
   )
   const snap = await getDocs(q)

@@ -1,8 +1,10 @@
 import { Timestamp } from 'firebase/firestore'
 
 
-export type UserRole = 'sindico' | 'subsindico' | 'conselheiro' | 'zelador'| 'outros'
 
+// ── SUBSTITUIR o UserRole existente por este: ─────────────────────────────────
+export type UserRole = 'super_admin' | 'sindico' | 'subsindico' | 'conselheiro' | 'zelador' | 'outros'
+ 
 export type DemandType =
   | 'manutencao'
   | 'administrativo'
@@ -23,7 +25,12 @@ export interface CondoUser {
   role: UserRole
   canDelete: boolean
   active: boolean
-  acessoSigilo?: boolean 
+  acessoSigilo?: boolean
+  condominioId: string | null   // null somente para super_admin
+  telefone?: string             // formato: 5511999999999 (DDI+DDD+número, só dígitos)
+  telefoneVerificado?: boolean
+  criadoEm?: Timestamp
+  criadoPor?: string
 }
 
 export interface DemandUpdate {
@@ -79,6 +86,7 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
+  super_admin: 'Administrador da Plataforma',
   sindico: 'Síndico',
   subsindico: 'Subsíndico',
   conselheiro: 'Conselheiro',
@@ -121,6 +129,7 @@ export type Periodicidade =
 
 export interface TarefaPeriodica {
   id: string
+  condominioId: string  
   titulo: string
   descricao?: string
   periodicidade: Periodicidade
@@ -173,6 +182,7 @@ export type StatusContrato = 'ativo' | 'encerrado' | 'em_renovacao'
 
 export interface Contrato {
   id: string
+  condominioId: string
   fornecedor: string
   cnpj?: string
   objeto: string
@@ -205,6 +215,7 @@ export type ResultadoOrcamento = 'contratado' | 'nao_contratado'
 
 export interface Orcamento {
   id: string
+  condominioId: string
   titulo: string
   descricao: string
   status: StatusOrcamento
@@ -317,4 +328,80 @@ export const ESTADO_CONSERVACAO_COLOR: Record<EstadoConservacao, string> = {
   Bom: 'bg-blue-100 text-blue-800',
   Regular: 'bg-yellow-100 text-yellow-800',
   Ruim: 'bg-red-100 text-red-800',
+}
+
+
+// criado para gerar diversos condominios
+export type CondominioStatus = 'trial' | 'ativo' | 'suspenso' | 'cancelado'
+export type PlanoTipo = 'gratis' | 'basico' | 'profissional' | 'enterprise'
+ 
+export interface Condominio {
+  id: string
+  nome: string
+  cnpj?: string
+  endereco?: string
+  cidade?: string
+  estado?: string
+  cep?: string
+  telefone?: string
+  emailContato?: string
+  status: CondominioStatus
+  plano: PlanoTipo
+  criadoEm: Timestamp
+  criadoPor: string
+  trialExpiraEm?: Timestamp
+}
+ 
+export const CONDOMINIO_STATUS_LABELS: Record<CondominioStatus, string> = {
+  trial: 'Em avaliação',
+  ativo: 'Ativo',
+  suspenso: 'Suspenso',
+  cancelado: 'Cancelado',
+}
+ 
+export const PLANO_LABELS: Record<PlanoTipo, string> = {
+  gratis: 'Grátis',
+  basico: 'Básico',
+  profissional: 'Profissional',
+  enterprise: 'Enterprise',
+}
+
+// ── Convites ──────────────────────────────────────────────────────
+
+export type TipoConvite = 'novo_condominio' | 'usuario_existente'
+export type StatusConvite = 'pendente' | 'usado' | 'expirado' | 'cancelado'
+
+export interface Convite {
+  id: string                    // = token, também é o docId
+  tipo: TipoConvite
+  status: StatusConvite
+
+  // Preenchido quando tipo = 'novo_condominio' (nome sugerido do condomínio)
+  condominioNome?: string
+
+  // Preenchido sempre: se 'usuario_existente', já vem definido na criação;
+  // se 'novo_condominio', é preenchido no momento em que o convite é aceito
+  condominioId?: string
+
+  role: UserRole
+  emailConvidado?: string       // opcional — trava o convite a um e-mail específico
+
+  criadoPor: string             // uid do super_admin que gerou
+  criadoEm: Timestamp
+  expiraEm: Timestamp
+
+  usadoEm?: Timestamp
+  usadoPor?: string              // uid do CondoUser criado a partir do convite
+}
+
+export const TIPO_CONVITE_LABELS: Record<TipoConvite, string> = {
+  novo_condominio: 'Novo condomínio',
+  usuario_existente: 'Usuário em condomínio existente',
+}
+
+export const STATUS_CONVITE_LABELS: Record<StatusConvite, string> = {
+  pendente: 'Pendente',
+  usado: 'Usado',
+  expirado: 'Expirado',
+  cancelado: 'Cancelado',
 }

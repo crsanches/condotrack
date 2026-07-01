@@ -35,18 +35,19 @@ export default function PatrimonioDetailPage() {
   const podeGerenciar = PODE_GERENCIAR.includes(user?.role ?? '')
 
   const carregar = useCallback(async () => {
+    if (!user?.condominioId) return
     setLoading(true)
     try {
       const [p, cs] = await Promise.all([
         getPatrimonio(id),
-        getContratosAtivos(),
+        getContratosAtivos(user.condominioId),
       ])
       setPatrimonio(p)
       setContratos(cs)
     } finally {
       setLoading(false)
     }
-  }, [id])
+  }, [id, user?.condominioId])
 
   useEffect(() => { carregar() }, [carregar])
 
@@ -134,7 +135,6 @@ export default function PatrimonioDetailPage() {
 
       <main className="max-w-3xl mx-auto px-4 py-6 space-y-4">
 
-        {/* ── Cabeçalho resumo ── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
@@ -154,7 +154,6 @@ export default function PatrimonioDetailPage() {
           </div>
         </div>
 
-        {/* ── Identificação ── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Identificação</h2>
           <dl className="grid grid-cols-2 gap-4">
@@ -165,7 +164,6 @@ export default function PatrimonioDetailPage() {
           </dl>
         </div>
 
-        {/* ── Dados financeiros ── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Dados financeiros</h2>
           <dl className="grid grid-cols-2 gap-4">
@@ -184,7 +182,6 @@ export default function PatrimonioDetailPage() {
           </dl>
         </div>
 
-        {/* ── Contratos de manutenção ── */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
           <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Contrato de manutenção</h2>
           {!patrimonio.possuiContrato ? (
@@ -216,7 +213,6 @@ export default function PatrimonioDetailPage() {
           )}
         </div>
 
-        {/* ── Observações ── */}
         {patrimonio.observacoes && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
             <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Observações</h2>
@@ -224,12 +220,10 @@ export default function PatrimonioDetailPage() {
           </div>
         )}
 
-        {/* ── Metadados ── */}
         <div className="text-xs text-gray-400 text-right px-1">
           Cadastrado em {formatDate(patrimonio.criadoEm)} · Atualizado em {formatDate(patrimonio.atualizadoEm)}
         </div>
 
-        {/* ── Excluir ── */}
         {podeGerenciar && (
           <div className="pt-2 pb-8">
             {!confirmDelete ? (

@@ -639,41 +639,42 @@ export default function RelatorioSlugPage() {
   }, [user, loading, router])
 
   const carregar = useCallback(async () => {
-    if (!user) return
+    if (!user?.condominioId) return
+    const condominioId = user.condominioId
     setCarregando(true)
     try {
       let resultado: unknown[] = []
       switch (slug) {
-        case 'usuarios':                     resultado = await relUsuarios(); break
-        case 'responsaveis':                 resultado = await relResponsaveis(); break
-        case 'fornecedores':                 resultado = await relFornecedores(); break
-        case 'contratos-ativos-contratacao': resultado = await relContratosAtivos('contratacao', acessoSigilo); break
-        case 'contratos-ativos-vencimento':  resultado = await relContratosAtivos('vencimento', acessoSigilo); break
-        case 'contratos-vencendo':           resultado = await relContratosVencendo(diasVencendo, acessoSigilo); break
-        case 'contratos-vencidos':           resultado = await relContratosVencidos(ordem, acessoSigilo); break
-        case 'tarefas-responsavel':          resultado = await relTarefasPorResponsavel(); break
-        case 'tarefas-periodicidade':        resultado = await relTarefasPorPeriodicidade(); break
-        case 'tarefas-atrasadas':            resultado = await relTarefasAtrasadas(); break
-        case 'tarefas-nao-conformidade':     resultado = await relTarefasNaoConformidade(periodo || undefined); break
-        case 'orcamentos-em-analise':        resultado = await relOrcamentosEmAnalise(acessoSigilo); break
-        case 'orcamentos-contratados':       resultado = await relOrcamentosContratados(acessoSigilo); break
-        case 'orcamentos-sem-cotacao':       resultado = await relOrcamentosSemCotacao(acessoSigilo); break
-        case 'demandas-data':                resultado = await relDemandasPorData(acessoSigilo, periodo || undefined); break
-        case 'demandas-prioridade':          resultado = await relDemandasPorPrioridade(acessoSigilo, periodo || undefined); break
-        case 'demandas-responsavel':         resultado = await relDemandasPorResponsavel(acessoSigilo, periodo || undefined); break
-        case 'demandas-vencimento':          resultado = await relDemandasPorVencimento(acessoSigilo); break
-        case 'demandas-paradas':             resultado = await relDemandasParadas(acessoSigilo); break
-        case 'patrimonio-geral':         resultado = await relPatrimonioGeral(); break
-        case 'patrimonio-com-contrato':  resultado = await relPatrimonioComContrato(); break
-        case 'patrimonio-sem-contrato':  resultado = await relPatrimonioSemContrato(); break
-        case 'patrimonio-conservacao':   resultado = await relPatrimonioConservacaoCritica(); break
-        case 'patrimonio-valor-setor':   resultado = await relPatrimonioValorPorSetor(); break
+        case 'usuarios':                     resultado = await relUsuarios(condominioId); break
+        case 'responsaveis':                 resultado = await relResponsaveis(condominioId); break
+        case 'fornecedores':                 resultado = await relFornecedores(condominioId); break
+        case 'contratos-ativos-contratacao': resultado = await relContratosAtivos(condominioId, 'contratacao', acessoSigilo); break
+        case 'contratos-ativos-vencimento':  resultado = await relContratosAtivos(condominioId, 'vencimento', acessoSigilo); break
+        case 'contratos-vencendo':           resultado = await relContratosVencendo(condominioId, diasVencendo, acessoSigilo); break
+        case 'contratos-vencidos':           resultado = await relContratosVencidos(condominioId, ordem, acessoSigilo); break
+        case 'tarefas-responsavel':          resultado = await relTarefasPorResponsavel(condominioId); break
+        case 'tarefas-periodicidade':        resultado = await relTarefasPorPeriodicidade(condominioId); break
+        case 'tarefas-atrasadas':            resultado = await relTarefasAtrasadas(condominioId); break
+        case 'tarefas-nao-conformidade':     resultado = await relTarefasNaoConformidade(condominioId, periodo || undefined); break
+        case 'orcamentos-em-analise':        resultado = await relOrcamentosEmAnalise(condominioId, acessoSigilo); break
+        case 'orcamentos-contratados':       resultado = await relOrcamentosContratados(condominioId, acessoSigilo); break
+        case 'orcamentos-sem-cotacao':       resultado = await relOrcamentosSemCotacao(condominioId, acessoSigilo); break
+        case 'demandas-data':                resultado = await relDemandasPorData(condominioId, acessoSigilo, periodo || undefined); break
+        case 'demandas-prioridade':          resultado = await relDemandasPorPrioridade(condominioId, acessoSigilo, periodo || undefined); break
+        case 'demandas-responsavel':         resultado = await relDemandasPorResponsavel(condominioId, acessoSigilo, periodo || undefined); break
+        case 'demandas-vencimento':          resultado = await relDemandasPorVencimento(condominioId, acessoSigilo); break
+        case 'demandas-paradas':             resultado = await relDemandasParadas(condominioId, acessoSigilo); break
+        case 'patrimonio-geral':             resultado = await relPatrimonioGeral(condominioId); break
+        case 'patrimonio-com-contrato':      resultado = await relPatrimonioComContrato(condominioId); break
+        case 'patrimonio-sem-contrato':      resultado = await relPatrimonioSemContrato(condominioId); break
+        case 'patrimonio-conservacao':       resultado = await relPatrimonioConservacaoCritica(condominioId); break
+        case 'patrimonio-valor-setor':       resultado = await relPatrimonioValorPorSetor(condominioId); break
       }
       setDados(resultado)
     } finally {
       setCarregando(false)
     }
-  }, [slug, user, periodo, ordem, diasVencendo, acessoSigilo])
+  }, [slug, user?.condominioId, periodo, ordem, diasVencendo, acessoSigilo])
 
   useEffect(() => { carregar() }, [carregar])
 

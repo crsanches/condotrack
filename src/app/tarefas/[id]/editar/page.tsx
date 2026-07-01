@@ -43,8 +43,8 @@ export default function EditarTarefaPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!id) return
-    Promise.all([getTarefa(id), getAllResponsaveis()]).then(([t, resps]) => {
+    if (!id || !user?.condominioId) return
+    Promise.all([getTarefa(id), getAllResponsaveis(user.condominioId)]).then(([t, resps]) => {
       setResponsaveis(resps)
       if (!t) return
       setTarefa(t)
@@ -61,7 +61,7 @@ export default function EditarTarefaPage() {
       }
       setLoadingData(false)
     })
-  }, [id])
+  }, [id, user?.condominioId])
 
   function toggleDiaSemana(dia: number) {
     setDiasSemana(prev =>

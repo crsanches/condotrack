@@ -20,11 +20,16 @@ import { db } from './firebase'
 import type { Demand, DemandUpdate, CondoUser, DemandStatus, Priority, DemandType, Responsavel,TarefaPeriodica,
   RegistroTarefa,
   Contrato,
-  StatusTarefa, Cotacao, Orcamento, ObservacaoOrcamento, ResultadoOrcamento} from '@/types'
+  StatusTarefa, Cotacao, Orcamento, ObservacaoOrcamento, ResultadoOrcamento, Condominio} from '@/types'
   import { v4 as uuidv4 } from 'uuid'
 
 
-   
+  // ── nome do condominio ───────────────────────────────────────────────────────────────────── 
+
+  export async function getCondominio(id: string): Promise<Condominio | null> {
+    const snap = await getDoc(doc(db, 'condominios', id))
+    return snap.exists() ? ({ id: snap.id, ...snap.data() } as Condominio) : null
+  }
 
 
 // ── Users ─────────────────────────────────────────────────────────────────────
@@ -34,21 +39,33 @@ export async function getUser(uid: string): Promise<CondoUser | null> {
   return snap.exists() ? ({ uid: snap.id, ...snap.data() } as CondoUser) : null
 }
 
-export async function getAllUsers(): Promise<CondoUser[]> {
-  const snap = await getDocs(query(collection(db, 'users'), where('active', '==', true)))
+export async function getAllUsers(condominioId: string): Promise<CondoUser[]> {
+  const snap = await getDocs(
+    query(collection(db, 'users'), where('condominioId', '==', condominioId))
+  )
   return snap.docs.map((d) => ({ uid: d.id, ...d.data() } as CondoUser))
 }
 
+export async function updateUser(
+  uid: string,
+  data: Partial<Pick<CondoUser, 'name' | 'role' | 'telefone' | 'active'>>
+): Promise<void> {
+  await updateDoc(doc(db, 'users', uid), data)
+}
 
-// ── Responsáveis ─────────────────────────────────────────────────────────────────────
-export async function getAllResponsaveis(): Promise<Responsavel[]> {
+
+
+// ── Responsáveis ─────────────────────────────────────────────────────────────
+ 
+export async function getAllResponsaveis(condominioId: string): Promise<Responsavel[]> {
   const snap = await getDocs(
     query(
       collection(db, 'responsaveis'),
+      where('condominioId', '==', condominioId),
       where('active', '==', true)
     )
   )
-
+ 
   return snap.docs.map(
     d =>
       ({
@@ -57,92 +74,110 @@ export async function getAllResponsaveis(): Promise<Responsavel[]> {
       }) as Responsavel
   )
 }
-
-
-
-// ── Criar Responsáveis ─────────────────────────────────────────────────────────────────────
-export async function createResponsavel(data: {
-  nome: string
-  email?: string
-  role: 'administrativo' | 'operacional'
-  acessoSigilo?: boolean  
-}): Promise<string> {
-
+ 
+// ── Criar Responsáveis ───────────────────────────────────────────────────────
+ 
+export async function createResponsavel(
+  condominioId: string,
+  data: {
+    nome: string
+    email?: string
+    role: 'administrativo' | 'operacional'
+    acessoSigilo?: boolean
+  }
+): Promise<string> {
   const ref = await addDoc(
     collection(db, 'responsaveis'),
     {
       nome: data.nome,
       email: data.email || '',
       role: data.role,
-      acessoSigilo: data.acessoSigilo ?? false,  
+      acessoSigilo: data.acessoSigilo ?? false,
       active: true,
+      condominioId,
     }
   )
-
+ 
   return ref.id
 }
-
+ 
+export async function updateResponsavel(
+  id: string,
+  data: {
+    nome: string
+    email?: string
+    role: 'administrativo' | 'operacional'
+    acessoSigilo?: boolean
+  }
+): Promise<void> {
+  await updateDoc(
+    doc(db, 'responsaveis', id),
+    {
+      nome: data.nome,
+      email: data.email || '',
+      role: data.role,
+      acessoSigilo: data.acessoSigilo ?? false,
+    }
+  )
+}
+ 
+export async function inativarResponsavel(id: string): Promise<void> {
+  await updateDoc(
+    doc(db, 'responsaveis', id),
+    { active: false }
+  )
+}
+ 
 // ── Demands ───────────────────────────────────────────────────────────────────
-
+ 
 export interface DemandFilters {
   status?: DemandStatus
   prioridade?: Priority
   tipo?: DemandType
   responsavel?: string
 }
-
+ 
 export function subscribeToDemands(
+  condominioId: string,
   filters: DemandFilters,
   callback: (demands: Demand[]) => void,
-  acessoSigilo = false  
+  acessoSigilo = false
 ) {
   const q = query(
     collection(db, 'demands'),
+    where('condominioId', '==', condominioId),
     orderBy('dataCriacao', 'desc')
   )
-
+ 
   return onSnapshot(q, (snap) => {
     let demands = snap.docs.map(
       (d) => ({ id: d.id, ...d.data() } as Demand)
     )
-      // ── filtro sigilo ──────────────────────────────
-      if (!acessoSigilo) {
-        demands = demands.filter(d => !d.registroSigiloso)
-      }
-      // ──────────────────────────────────────────────
+    if (!acessoSigilo) {
+      demands = demands.filter(d => !d.registroSigiloso)
+    }
     if (filters.status) {
-      demands = demands.filter(
-        d => d.status === filters.status
-      )
+      demands = demands.filter(d => d.status === filters.status)
     }
-
     if (filters.prioridade) {
-      demands = demands.filter(
-        d => d.prioridade === filters.prioridade
-      )
+      demands = demands.filter(d => d.prioridade === filters.prioridade)
     }
-
     if (filters.tipo) {
-      demands = demands.filter(
-        d => d.tipo === filters.tipo
-      )
+      demands = demands.filter(d => d.tipo === filters.tipo)
     }
-
     if (filters.responsavel) {
-      demands = demands.filter(
-        d => d.responsavelId === filters.responsavel
-      )
+      demands = demands.filter(d => d.responsavelId === filters.responsavel)
     }
-
+ 
     callback(demands)
   })
 }
-
+ 
 export async function getDemand(id: string): Promise<Demand | null> {
   const snap = await getDoc(doc(db, 'demands', id))
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Demand) : null
 }
-
+ 
 export interface CreateDemandData {
   titulo: string
   tipo: DemandType
@@ -154,13 +189,17 @@ export interface CreateDemandData {
   dataConclusao: Timestamp | null
   criadoPor: string
   primeiraAtualizacao?: string
-  registroSigiloso?: boolean 
+  registroSigiloso?: boolean
 }
-
-export async function createDemand(data: CreateDemandData): Promise<string> {
+ 
+export async function createDemand(
+  condominioId: string,
+  data: CreateDemandData
+): Promise<string> {
   const now = Timestamp.now()
   const ref = await addDoc(collection(db, 'demands'), {
     ...data,
+    condominioId,
     dataCriacao: now,
     atualizacoes: [
       {
@@ -172,14 +211,14 @@ export async function createDemand(data: CreateDemandData): Promise<string> {
   })
   return ref.id
 }
-
+ 
 export async function updateDemand(
   id: string,
-  data: Partial<Omit<Demand, 'id' | 'atualizacoes' | 'dataCriacao'>>
+  data: Partial<Omit<Demand, 'id' | 'atualizacoes' | 'dataCriacao' | 'condominioId'>>
 ): Promise<void> {
   await updateDoc(doc(db, 'demands', id), data)
 }
-
+ 
 export async function addUpdate(
   id: string,
   update: Omit<DemandUpdate, 'data'>,
@@ -190,18 +229,20 @@ export async function addUpdate(
     atualizacoes: [...currentUpdates, newUpdate],
   })
 }
-
+ 
 export async function deleteDemand(id: string): Promise<void> {
   await deleteDoc(doc(db, 'demands', id))
 }
-
-export async function getDemandStats(): Promise<{
+ 
+export async function getDemandStats(condominioId: string): Promise<{
   total: number
   abertas: number
   em_andamento: number
   concluidas: number
 }> {
-  const snap = await getDocs(collection(db, 'demands'))
+  const snap = await getDocs(
+    query(collection(db, 'demands'), where('condominioId', '==', condominioId))
+  )
   const demands = snap.docs.map((d) => d.data() as Demand)
   return {
     total: demands.length,
@@ -210,49 +251,18 @@ export async function getDemandStats(): Promise<{
     concluidas: demands.filter((d) => d.status === 'concluida').length,
   }
 }
-
-export async function updateResponsavel(
-  id: string,
-  data: {
-    nome: string
-    email?: string
-    role: 'administrativo' | 'operacional'
-    acessoSigilo?: boolean 
-  }
-): Promise<void> {
-
-  await updateDoc(
-    doc(db, 'responsaveis', id),
-    {
-      nome: data.nome,
-      email: data.email || '',
-      role: data.role,
-      acessoSigilo: data.acessoSigilo ?? false, 
-    }
-  )
-}
-
-export async function inativarResponsavel(
-  id: string
-): Promise<void> {
-
-  await updateDoc(
-    doc(db, 'responsaveis', id),
-    {
-      active: false,
-    }
-  )
-}
-
-export async function getRecentDemands(limit = 5): Promise<Demand[]> {
+ 
+export async function getRecentDemands(condominioId: string, limit = 5): Promise<Demand[]> {
   const q = query(
     collection(db, 'demands'),
+    where('condominioId', '==', condominioId),
     orderBy('dataCriacao', 'desc'),
     firestoreLimit(limit)
   )
   const snap = await getDocs(q)
   return snap.docs.map(d => ({ id: d.id, ...d.data() } as Demand))
 }
+
 
 export function calcularStatusTarefa(
   tarefa: TarefaPeriodica,
@@ -370,29 +380,36 @@ export function calcularStatusTarefa(
 }
 // ── Tarefas Periódicas ─────────────────────────────────────────────
 
-export async function getAllTarefas(): Promise<TarefaPeriodica[]> {
+export async function getAllTarefas(condominioId: string): Promise<TarefaPeriodica[]> {
   const snap = await getDocs(
-    query(collection(db, 'tarefas_periodicas'), orderBy('titulo'))
+    query(
+      collection(db, 'tarefas_periodicas'),
+      where('condominioId', '==', condominioId)
+    )
   )
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as TarefaPeriodica))
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as TarefaPeriodica))
+    .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'))
 }
 
 export function subscribeToTarefas(
+  condominioId: string,
   callback: (tarefas: TarefaPeriodica[]) => void
 ) {
   const q = query(
     collection(db, 'tarefas_periodicas'),
-    orderBy('titulo')
+    where('condominioId', '==', condominioId)
   )
 
   return onSnapshot(q, snap => {
-    callback(
-      snap.docs.map(
-        d => ({ id: d.id, ...d.data() } as TarefaPeriodica)
-      )
-    )
+    const tarefas = snap.docs
+      .map(d => ({ id: d.id, ...d.data() } as TarefaPeriodica))
+      .sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'))
+    callback(tarefas)
   })
 }
+
+
 export function subscribeToRegistros(
   callback: () => void
 ) {
@@ -408,10 +425,12 @@ export async function getTarefa(id: string): Promise<TarefaPeriodica | null> {
 }
 
 export async function createTarefa(
-  data: Omit<TarefaPeriodica, 'id' | 'criadoEm'>
+  condominioId: string,
+  data: Omit<TarefaPeriodica, 'id' | 'criadoEm' | 'condominioId'>
 ): Promise<string> {
   const ref = await addDoc(collection(db, 'tarefas_periodicas'), {
     ...data,
+    condominioId,
     criadoEm: Timestamp.now(),
   })
   return ref.id
@@ -466,39 +485,49 @@ export async function createRegistroTarefa(
   return ref.id
 }
 
-// ── Contratos ──────────────────────────────────────────────────────
 
-export async function getAllContratos(acessoSigilo = false): Promise<Contrato[]> {
+// ── Contratos ──────────────────────────────────────────────────────
+ 
+export async function getAllContratos(
+  condominioId: string,
+  acessoSigilo = false
+): Promise<Contrato[]> {
   const snap = await getDocs(
-    query(collection(db, 'contratos'), orderBy('dataVencimento'))
+    query(
+      collection(db, 'contratos'),
+      where('condominioId', '==', condominioId),
+      orderBy('dataVencimento')
+    )
   )
   let contratos = snap.docs.map(d => ({ id: d.id, ...d.data() } as Contrato))
-
+ 
   if (!acessoSigilo) {
     contratos = contratos.filter(c => !c.registroSigiloso)
   }
-
+ 
   return contratos
 }
-
+ 
 export async function getContrato(id: string): Promise<Contrato | null> {
   const snap = await getDoc(doc(db, 'contratos', id))
   return snap.exists() ? ({ id: snap.id, ...snap.data() } as Contrato) : null
 }
-
+ 
 export async function createContrato(
-  data: Omit<Contrato, 'id' | 'criadoEm'>
+  condominioId: string,
+  data: Omit<Contrato, 'id' | 'criadoEm' | 'condominioId'>
 ): Promise<string> {
   const ref = await addDoc(collection(db, 'contratos'), {
     ...data,
+    condominioId,
     criadoEm: Timestamp.now(),
   })
   return ref.id
 }
-
+ 
 export async function updateContrato(
   id: string,
-  data: Partial<Omit<Contrato, 'id' | 'criadoEm'>>
+  data: Partial<Omit<Contrato, 'id' | 'criadoEm' | 'condominioId'>>
 ): Promise<void> {
   await updateDoc(doc(db, 'contratos', id), data)
 }
@@ -508,11 +537,13 @@ export async function updateContrato(
 // ── Orçamentos ────────────────────────────────────────────────────────────────
  
 export async function createOrcamento(
-  data: Omit<Orcamento, 'id' | 'status' | 'resultado' | 'contratoId' | 'concluidoEm' | 'concluidoPor' | 'observacoes' | 'totalCotacoes'>
+  condominioId: string,
+  data: Omit<Orcamento, 'id' | 'condominioId' | 'status' | 'resultado' | 'contratoId' | 'concluidoEm' | 'concluidoPor' | 'observacoes' | 'totalCotacoes' | 'criadoEm'>
 ): Promise<string> {
   const ref = collection(db, 'orcamentos')
   const docRef = await addDoc(ref, {
     ...data,
+    condominioId,
     status: 'aberto',
     resultado: null,
     contratoId: null,
@@ -523,15 +554,15 @@ export async function createOrcamento(
   })
   return docRef.id
 }
- 
-export async function getAllOrcamentos(): Promise<Orcamento[]> {
-  const ref = collection(db,  'orcamentos')
-  const snap = await getDocs(query(ref, orderBy('criadoEm', 'desc')))
+
+export async function getAllOrcamentos(condominioId: string): Promise<Orcamento[]> {
+  const ref = collection(db, 'orcamentos')
+  const snap = await getDocs(query(ref, where('condominioId', '==', condominioId)))
   const orcamentos: Orcamento[] = []
- 
+
   for (const d of snap.docs) {
     const cotacoesSnap = await getDocs(
-      collection(db,  'orcamentos', d.id, 'cotacoes')
+      collection(db, 'orcamentos', d.id, 'cotacoes')
     )
     orcamentos.push({
       ...(d.data() as Omit<Orcamento, 'id' | 'totalCotacoes'>),
@@ -539,7 +570,12 @@ export async function getAllOrcamentos(): Promise<Orcamento[]> {
       totalCotacoes: cotacoesSnap.size,
     })
   }
-  return orcamentos
+
+  return orcamentos.sort((a, b) => {
+    const ta = a.criadoEm?.toDate?.().getTime() ?? 0
+    const tb = b.criadoEm?.toDate?.().getTime() ?? 0
+    return tb - ta
+  })
 }
  
 export async function getOrcamento(id: string): Promise<Orcamento | null> {
@@ -629,3 +665,11 @@ export async function deleteCotacao(orcamentoId: string, cotacaoId: string): Pro
     doc(db, 'orcamentos', orcamentoId, 'cotacoes', cotacaoId)
   )
 } 
+
+// ── Condominios──────────────────────────────────────────────────────────────────
+export async function getAllCondominios(): Promise<Condominio[]> {
+  const snap = await getDocs(collection(db, 'condominios'))
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Condominio))
+    .sort((a, b) => a.nome.localeCompare(b.nome))
+}

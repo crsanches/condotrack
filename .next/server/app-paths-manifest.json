@@ -1,8 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/relatorios/page": "app/relatorios/page.js",
-  "/patrimonios/page": "app/patrimonios/page.js",
-  "/relatorios/[slug]/page": "app/relatorios/[slug]/page.js",
-  "/patrimonios/[id]/page": "app/patrimonios/[id]/page.js"
+  "/tarefas/nova/page": "app/tarefas/nova/page.js",
+  "/conta/page": "app/conta/page.js",
+  "/patrimonios/novo/page": "app/patrimonios/novo/page.js",
+  "/auth/page": "app/auth/page.js"
 }

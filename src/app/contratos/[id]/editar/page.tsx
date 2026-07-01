@@ -43,8 +43,8 @@ export default function EditarContratoPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!id) return
-    Promise.all([getContrato(id), getAllResponsaveis()]).then(([c, resps]) => {
+    if (!id || !user?.condominioId) return
+    Promise.all([getContrato(id), getAllResponsaveis(user.condominioId)]).then(([c, resps]) => {
       setResponsaveis(resps)
       if (!c) return
       setContrato(c)
@@ -60,7 +60,7 @@ export default function EditarContratoPage() {
       setObservacoes(c.observacoes || '')
       setLoadingData(false)
     })
-  }, [id])
+  }, [id, user?.condominioId])
 
   function formatCnpj(value: string) {
     const digits = value.replace(/\D/g, '').slice(0, 14)

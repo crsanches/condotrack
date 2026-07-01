@@ -28,14 +28,15 @@ export default function OrcamentosPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!user) return
-    getAllOrcamentos().then(data => {
+    if (!user?.condominioId) return
+    getAllOrcamentos(user.condominioId).then(data => {
       const visible = data.filter(o => !o.registroSigiloso || canSeeSigilo)
       setOrcamentos(visible)
       setFetching(false)
     })
-  }, [user, canSeeSigilo])
+  }, [user?.condominioId, canSeeSigilo])
 
+  
   const filtered = orcamentos.filter(o => filtro === 'todos' || o.status === filtro)
   const totalAbertos = orcamentos.filter(o => o.status === 'aberto').length
 

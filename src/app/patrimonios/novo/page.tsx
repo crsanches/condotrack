@@ -2,15 +2,18 @@
 
 import { useRouter } from 'next/navigation'
 import Header from '@/components/layout/Header'
+import { useAuth } from '@/hooks/useAuth'
 import { createPatrimonio } from '../service'
 import { PatrimonioFormData } from '@/types'
 import PatrimonioForm from '../PatrimonioForm'
 
 export default function NovoPatrimonioPage() {
   const router = useRouter()
+  const { user } = useAuth()
 
   const handleSubmit = async (data: PatrimonioFormData) => {
-    const id = await createPatrimonio(data)
+    if (!user?.condominioId) return
+    const id = await createPatrimonio(user.condominioId, data)
     router.push(`/patrimonios/${id}`)
   }
 

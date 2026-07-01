@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Header from '@/components/layout/Header'
+import { useAuth } from '@/hooks/useAuth'
 import {
     getAllResponsaveis,
     createResponsavel,
@@ -11,8 +12,10 @@ import {
 import type { Responsavel } from '@/types'
 
 export default function ResponsaveisPage() {
+
+   const { user, loading } = useAuth()
   const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loadingData, setLoadingData] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
@@ -21,14 +24,18 @@ export default function ResponsaveisPage() {
   const [saving, setSaving] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    if (!user?.condominioId) return
+    load()
+  }, [user?.condominioId])
 
   async function load() {
+    if (!user?.condominioId) return
     try {
-      const data = await getAllResponsaveis()
+      const data = await getAllResponsaveis(user.condominioId)
       setResponsaveis(data)
     } finally {
-      setLoading(false)
+      setLoadingData(false)
     }
   }
 
@@ -42,7 +49,7 @@ export default function ResponsaveisPage() {
   }
 
   async function handleCreate() {
-    if (!nome.trim()) return
+    if (!nome.trim() || !user?.condominioId) return
     setSaving(true)
     try {
       if (editingId) {
@@ -50,14 +57,14 @@ export default function ResponsaveisPage() {
           nome: nome.trim(),
           email: email.trim(),
           role,
-          acessoSigilo,  // ← novo
+          acessoSigilo,
         })
       } else {
-        await createResponsavel({
+        await createResponsavel(user.condominioId, {
           nome: nome.trim(),
           email: email.trim(),
           role,
-          acessoSigilo,  // ← novo
+          acessoSigilo,
         })
       }
       resetForm()
@@ -65,7 +72,7 @@ export default function ResponsaveisPage() {
     } finally {
       setSaving(false)
     }
-  }
+  } 
 
   return (
     <>

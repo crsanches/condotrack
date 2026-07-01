@@ -90,9 +90,10 @@ function DemandsPageContent() {
   }, [user, loading, router])
 
   useEffect(() => {
-    getAllUsers().then(setUsers)
-    getAllResponsaveis().then(setResponsaveis)
-  }, [])
+    if (!user?.condominioId) return
+    getAllUsers(user.condominioId).then(setUsers) 
+    getAllResponsaveis(user.condominioId).then(setResponsaveis)
+  }, [user?.condominioId])
 
   useEffect(() => {
     if (!loading && user && mode === 'delete' && !user.canDelete) {
@@ -197,7 +198,6 @@ function DemandsPageContent() {
         <div className="px-4 mt-4">
           <div className="flex items-center gap-2">
 
-            {/* botões resumido/expandido */}
             <button
               onClick={() => setCompactView(true)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
@@ -215,7 +215,6 @@ function DemandsPageContent() {
               📋 Expandido
             </button>
 
-            {/* dropdown ordenação */}
             <div className="ml-auto flex flex-col items-end gap-1">
               <label className="text-ls text-blue-600 font-medium">
                 Ordenar por:
@@ -260,8 +259,6 @@ function DemandsPageContent() {
             ))
           )}
         </div>
-
-       
 
       </div>
     </>

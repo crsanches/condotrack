@@ -53,13 +53,13 @@ export default function RegistrarTarefaPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    if (!id) return
+    if (!id || !user?.condominioId) return
     getTarefa(id).then(t => {
       setTarefa(t)
       if (t) setResponsavelId(t.responsavelPadraoId)
     })
-    getAllResponsaveis().then(setResponsaveis)
-  }, [id])
+    getAllResponsaveis(user.condominioId).then(setResponsaveis)
+  }, [id, user?.condominioId])
 
   function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]

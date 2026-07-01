@@ -11,23 +11,30 @@ export function useDemands(filters: DemandFilters = {}) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user?.condominioId) {
+      setDemands([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     const unsub = subscribeToDemands(
+      user.condominioId,
       filters,
       (data) => {
         setDemands(data)
         setLoading(false)
       },
-      user?.acessoSigilo ?? false   // ← novo
+      user?.acessoSigilo ?? false
     )
     return unsub
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    user?.condominioId,
     filters.status,
     filters.prioridade,
     filters.tipo,
     filters.responsavel,
-    user?.acessoSigilo,   // ← novo
+    user?.acessoSigilo,
   ])
 
   return { demands, loading }

@@ -8,9 +8,14 @@ import { getUser } from '@/lib/firestore'
 interface AuthContextValue {
   user: CondoUser | null
   loading: boolean
+  isSuperAdmin: boolean
 }
 
-const AuthContext = createContext<AuthContextValue>({ user: null, loading: true })
+const AuthContext = createContext<AuthContextValue>({
+  user: null,
+  loading: true,
+  isSuperAdmin: false,
+})
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<CondoUser | null>(null)
@@ -29,8 +34,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return unsub
   }, [])
 
+  const isSuperAdmin = user?.role === 'super_admin'
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, isSuperAdmin }}>
       {children}
     </AuthContext.Provider>
   )

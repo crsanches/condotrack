@@ -2,12 +2,90 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   type User,
 } from 'firebase/auth'
 import { auth } from './firebase'
 import { getUser } from './firestore'
-import type { CondoUser } from '@/types'
+
 import { deleteApp } from 'firebase/app'
+
+import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc, addDoc, collection, Timestamp } from 'firebase/firestore'
+import { db } from './firebase'
+import type { Convite, CondoUser } from '@/types'
+import { conviteValido, marcarConviteUsado } from './convites'
+
+export async function signupComConvite(
+  convite: Convite,
+  dados: {
+    name: string
+    email: string
+    password: string
+    telefone?: string
+  }
+): Promise<CondoUser> {
+  const check = conviteValido(convite)
+  if (!check.valido) throw new Error(check.motivo)
+
+  if (convite.emailConvidado && convite.emailConvidado.toLowerCase() !== dados.email.toLowerCase()) {
+    throw new Error('Este convite foi emitido para outro e-mail.')
+  }
+
+  const cred = await createUserWithEmailAndPassword(auth, dados.email, dados.password)
+
+  let condominioId = convite.condominioId
+
+  if (convite.tipo === 'novo_condominio') {
+    const condRef = await addDoc(collection(db, 'condominios'), {
+      nome: convite.condominioNome || 'Novo Condomínio',
+      status: 'trial',
+      plano: 'gratis',
+      criadoEm: Timestamp.now(),
+      criadoPor: cred.user.uid,
+    })
+    condominioId = condRef.id
+  }
+
+  if (!condominioId) throw new Error('Convite inválido: condomínio não definido.')
+
+  const novoUsuario: Omit<CondoUser, 'uid'> = {
+    name: dados.name,
+    email: dados.email,
+    role: convite.role,
+    canDelete: convite.role === 'sindico',
+    active: true,
+    condominioId,
+    ...(dados.telefone ? { telefone: dados.telefone, telefoneVerificado: false } : {}),
+    criadoEm: Timestamp.now(),
+    criadoPor: convite.criadoPor,
+  }
+
+  await setDoc(doc(db, 'users', cred.user.uid), novoUsuario)
+  await marcarConviteUsado(convite.id, cred.user.uid)
+
+  return { uid: cred.user.uid, ...novoUsuario }
+}
+
+export async function changePassword(
+  senhaAtual: string,
+  novaSenha: string
+): Promise<void> {
+  const current = auth.currentUser
+  if (!current || !current.email) throw new Error('Nenhum usuário autenticado.')
+
+  const credential = EmailAuthProvider.credential(current.email, senhaAtual)
+  try {
+    await reauthenticateWithCredential(current, credential)
+  } catch {
+    throw new Error('Senha atual incorreta.')
+  }
+
+  await updatePassword(current, novaSenha)
+}
+
 
 export async function login(email: string, password: string): Promise<CondoUser> {
   const cred = await signInWithEmailAndPassword(auth, email, password)

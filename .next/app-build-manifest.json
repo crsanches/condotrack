@@ -1,15 +1,20 @@
 {
   "pages": {
-    "/page": [
+    "/admin/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/admin/page.js"
     ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
+    ],
+    "/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/page.js"
     ],
     "/auth/page": [
       "static/chunks/webpack.js",
@@ -21,6 +26,36 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
+    "/demands/nova/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/demands/nova/page.js"
+    ],
+    "/admin/responsaveis/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/responsaveis/page.js"
+    ],
+    "/demands/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/demands/page.js"
+    ],
+    "/demands/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/demands/[id]/page.js"
+    ],
+    "/demands/[id]/editar/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/demands/[id]/editar/page.js"
+    ],
+    "/tarefas/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/tarefas/page.js"
+    ],
     "/relatorios/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -31,20 +66,35 @@
       "static/chunks/main-app.js",
       "static/chunks/app/relatorios/[slug]/page.js"
     ],
+    "/admin/plataforma/convites/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/admin/plataforma/convites/page.js"
+    ],
+    "/convite/[token]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/convite/[token]/page.js"
+    ],
+    "/tarefas/nova/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/tarefas/nova/page.js"
+    ],
     "/patrimonios/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/patrimonios/page.js"
     ],
-    "/patrimonios/[id]/page": [
+    "/patrimonios/novo/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/patrimonios/[id]/page.js"
+      "static/chunks/app/patrimonios/novo/page.js"
     ],
-    "/_not-found/page": [
+    "/conta/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/conta/page.js"
     ]
   }
 }

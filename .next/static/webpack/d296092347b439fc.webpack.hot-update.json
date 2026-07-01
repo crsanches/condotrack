@@ -1,0 +1,1 @@
+{"c":["app/admin/page","app/layout","app/auth/page","app/dashboard/page","app/demands/nova/page","app/admin/responsaveis/page","app/demands/page","app/demands/[id]/page","app/demands/[id]/editar/page","app/tarefas/page","app/relatorios/page","app/relatorios/[slug]/page","app/admin/plataforma/convites/page","app/convite/[token]/page","webpack"],"r":[],"m":[]}

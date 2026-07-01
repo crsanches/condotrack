@@ -24,19 +24,19 @@ export default function NovoOrcamentoPage() {
   }, [user, loading, router])
 
   async function handleSave() {
+    if (!user?.condominioId) { setError('Usuário sem condomínio associado.'); return }
     if (!titulo.trim()) { setError('Informe o título do orçamento.'); return }
     if (!descricao.trim()) { setError('Informe a descrição da necessidade/serviço.'); return }
-
+  
     setSaving(true)
     setError('')
-
+  
     try {
-      const id = await createOrcamento({
+      const id = await createOrcamento(user.condominioId, {
         titulo: titulo.trim(),
         descricao: descricao.trim(),
         registroSigiloso,
-        criadoPor: user!.uid,
-        criadoEm: undefined as never, // definido pelo Firestore
+        criadoPor: user.uid,
       })
       router.replace(`/orcamentos/${id}`)
     } catch (e: unknown) {

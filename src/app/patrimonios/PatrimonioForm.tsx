@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronDown, Plus, X, FileText, Search } from 'lucide-react'
 import { Timestamp } from 'firebase/firestore'
+import { useAuth } from '@/hooks/useAuth'
 import {
   getPatrimonioOpcoes,
   addCategoria,
@@ -25,6 +26,8 @@ interface Props {
 
 export default function PatrimonioForm({ initialData, onSubmit, submitLabel }: Props) {
   const router = useRouter()
+  const { user } = useAuth()
+  const condominioId = user?.condominioId ?? null
 
   const [opcoes, setOpcoes] = useState<PatrimonioOpcoes | null>(null)
   const [contratos, setContratos] = useState<ContratoResumo[]>([])
@@ -54,9 +57,10 @@ export default function PatrimonioForm({ initialData, onSubmit, submitLabel }: P
   })
 
   useEffect(() => {
-    getPatrimonioOpcoes().then(setOpcoes)
-    getContratosAtivos().then(setContratos)
-  }, [])
+    if (!condominioId) return
+    getPatrimonioOpcoes(condominioId).then(setOpcoes)
+    getContratosAtivos(condominioId).then(setContratos)
+  }, [condominioId])
 
   const set = (field: keyof PatrimonioFormData, value: unknown) =>
     setForm(prev => ({ ...prev, [field]: value }))
@@ -86,8 +90,8 @@ export default function PatrimonioForm({ initialData, onSubmit, submitLabel }: P
   )
 
   const handleNovaCategoria = async () => {
-    if (!novaCategoria.trim() || !opcoes) return
-    const updated = await addCategoria(novaCategoria.trim(), opcoes)
+    if (!novaCategoria.trim() || !opcoes || !condominioId) return
+    const updated = await addCategoria(condominioId, novaCategoria.trim(), opcoes)
     setOpcoes(updated)
     set('categoria', novaCategoria.trim())
     setNovaCategoria('')
@@ -95,8 +99,8 @@ export default function PatrimonioForm({ initialData, onSubmit, submitLabel }: P
   }
 
   const handleNovoSetor = async () => {
-    if (!novoSetor.trim() || !opcoes) return
-    const updated = await addSetor(novoSetor.trim(), opcoes)
+    if (!novoSetor.trim() || !opcoes || !condominioId) return
+    const updated = await addSetor(condominioId, novoSetor.trim(), opcoes)
     setOpcoes(updated)
     set('setor', novoSetor.trim())
     setNovoSetor('')

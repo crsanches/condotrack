@@ -56,23 +56,17 @@ export default function TarefasPage() {
     if (!loading && !user) router.replace('/auth')
   }, [user, loading, router])
 
+  
   const load = useCallback(async () => {
-    if (!user) return
+    if (!user?.condominioId) return
     setLoadingData(true)
     try {
-      const tarefas = await getAllTarefas()
+      const tarefas = await getAllTarefas(user.condominioId)
       const itensComStatus = await Promise.all(
         tarefas
           .filter(t => t.ativo)
           .map(async tarefa => {
             const ultimoRegistro = await getUltimoRegistro(tarefa.id)
-            
-            //console log
-            console.log(
-              tarefa.titulo,
-              ultimoRegistro?.dataRealizacao?.toDate(),
-              calcularStatusTarefa(tarefa, ultimoRegistro)
-            )
             const status = calcularStatusTarefa(tarefa, ultimoRegistro)
             return { tarefa, ultimoRegistro, status }
           })
@@ -85,14 +79,14 @@ export default function TarefasPage() {
     } finally {
       setLoadingData(false)
     }
-  }, [user])
+  }, [user?.condominioId])
 
   useEffect(() => {
-    if (!user) return
+    if (!user?.condominioId) return
   
     load()
   
-    const unsubTarefas = subscribeToTarefas(() => {
+    const unsubTarefas = subscribeToTarefas(user.condominioId, () => {
       load()
     })
   
@@ -104,7 +98,7 @@ export default function TarefasPage() {
       unsubTarefas()
       unsubRegistros()
     }
-  }, [user, load])
+  }, [user?.condominioId, load])
 
   useEffect(() => {
     function handleFocus() {

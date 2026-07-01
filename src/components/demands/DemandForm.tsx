@@ -49,7 +49,6 @@ export default function DemandForm({ existing }: DemandFormProps) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
-  // auto-preenche data conclusão ao marcar concluída
   useEffect(() => {
     if (status === 'concluida' && !dataConclusao) {
       setDataConclusao(new Date().toISOString().split('T')[0])
@@ -74,11 +73,11 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
 
 
   useEffect(() => {
-    getAllResponsaveis().then(data => {
-      console.log('RESPONSAVEIS:', data)
+    if (!user?.condominioId) return
+    getAllResponsaveis(user.condominioId).then(data => {
       setResponsaveis(data)
     })
-  }, [])
+  }, [user?.condominioId])
 
   useEffect(() => {
     if (existing?.responsavelId) {
@@ -88,11 +87,11 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
 
   const handleNovoResponsavel = async () => {
 
-    if (!novoResponsavel.trim()) return
+    if (!novoResponsavel.trim() || !user?.condominioId) return
   
     try {
   
-      const novoId = await createResponsavel({
+      const novoId = await createResponsavel(user.condominioId, {
         nome: novoResponsavel.trim(),
         role: 'operacional',
       })
@@ -128,10 +127,11 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
     if (!tipo) { setError('Selecione o tipo.'); return }
     if (!prioridade) { setError('Selecione a prioridade.'); return }
     if (!responsavelId) {
-  setError('Selecione o responsável.')
-  return
-}
+      setError('Selecione o responsável.')
+      return
+    }
     if (!user) return
+    if (!user.condominioId) { setError('Condomínio não identificado.'); return }
 
     setSaving(true)
     setError('')
@@ -157,7 +157,7 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           await addUpdate(existing.id, { texto: newUpdate.trim(), autor: user.uid }, existing.atualizacoes)
         }
       } else {
-        await createDemand({
+        await createDemand(user.condominioId, {
           titulo: titulo.trim(),
           tipo: tipo as DemandType,
           prioridade: prioridade as Priority,
@@ -555,5 +555,3 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
     </div>
   )
 }
-
-

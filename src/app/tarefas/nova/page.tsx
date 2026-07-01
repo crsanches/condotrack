@@ -38,8 +38,9 @@ export default function NovaTarefaPage() {
   }, [user, loading, router])
 
   useEffect(() => {
-    getAllResponsaveis().then(setResponsaveis)
-  }, [])
+    if (!user?.condominioId) return
+    getAllResponsaveis(user.condominioId).then(setResponsaveis)
+  }, [user?.condominioId])
 
   function toggleDiaSemana(dia: number) {
     setDiasSemana(prev =>
@@ -71,7 +72,7 @@ export default function NovaTarefaPage() {
     setError('')
 
     try {
-      await createTarefa({
+      await createTarefa(user!.condominioId!, {
         titulo: titulo.trim(),
         descricao: descricao.trim() || undefined,
         periodicidade,
