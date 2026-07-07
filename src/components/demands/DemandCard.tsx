@@ -17,14 +17,13 @@ export default function DemandCard({
   demand,
   mode = 'view',
   compact = false,
-}: DemandCardProps)
- {
+}: DemandCardProps) {
   const router = useRouter()
 
+  const inactive = demand.status === 'concluida'
+
   const lastUpd =
-    demand.atualizacoes[
-      demand.atualizacoes.length - 1
-    ]
+    demand.atualizacoes[demand.atualizacoes.length - 1]
 
   const href =
     mode === 'update'
@@ -94,65 +93,52 @@ export default function DemandCard({
     return (
       <div
         onClick={() => router.push(href)}
-        className="
-          bg-white
-          rounded-2xl
-          border
-          border-gray-100
-          shadow-sm
-          p-3
-          cursor-pointer
-        "
+        className={`rounded-2xl border shadow-sm p-3 cursor-pointer transition-all ${
+          inactive
+            ? 'bg-gray-100 border-gray-200 opacity-70 grayscale'
+            : 'bg-white border-gray-100'
+        }`}
       >
         <div className="flex items-start justify-between">
-  
+
           <div className="flex-1 min-w-0">
-  
+
             <div className="flex items-center gap-2">
-  
+
               <span
-                className={`
-                  px-2
-                  py-1
-                  rounded-full
-                  text-[10px]
-                  font-bold
-                  ${prio.bg}
-                  ${prio.text}
-                `}
+                className={`px-2 py-1 rounded-full text-[10px] font-bold ${
+                  inactive ? 'bg-gray-200 text-gray-500' : `${prio.bg} ${prio.text}`
+                }`}
               >
                 {prio.icon}
               </span>
-  
-              <div className="font-semibold text-gray-900 truncate">
+
+              <div className={`font-semibold truncate ${
+                inactive ? 'text-gray-500' : 'text-gray-900'
+              }`}>
                 {demand.titulo}
               </div>
-  
+
             </div>
-  
+
             <div className="text-xs text-gray-500 mt-2">
               👤 {demand.responsavelNome || 'Sem responsável'}
               {' • '}
-              📅 {formatDate(demand.dataCriacao)}
+              {inactive
+                ? `✅ Concluída em ${formatDate(demand.dataConclusao)}`
+                : `📅 ${formatDate(demand.dataCriacao)}`}
             </div>
-  
+
           </div>
-  
+
           <div
-            className={`
-              ml-3
-              px-2
-              py-1
-              rounded-full
-              text-xs
-              font-medium
-              ${status.bg}
-              ${status.text}
-            `}
+            className={`ml-3 px-2 py-1 rounded-full text-xs font-medium ${
+              inactive ? 'bg-gray-200 text-gray-500' : `${status.bg} ${status.text}`
+            }`}
           >
             {status.icon}
           </div>
-  
+
         </div>
       </div>
     )
@@ -161,19 +147,13 @@ export default function DemandCard({
   return (
     <div
       onClick={() => router.push(href)}
-      className="
-        bg-white
-        rounded-3xl
-        border
-        border-gray-100
-        shadow-sm
-        hover:shadow-md
-        transition-all
-        cursor-pointer
-        overflow-hidden
-      "
+      className={`rounded-3xl border shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${
+        inactive
+          ? 'bg-gray-100 border-gray-200 opacity-70 grayscale'
+          : 'bg-white border-gray-100'
+      }`}
     >
-      <div className={`h-1.5 ${prio.color}`} />
+      <div className={`h-1.5 ${inactive ? 'bg-gray-300' : prio.color}`} />
 
       <div className="p-4">
 
@@ -181,7 +161,9 @@ export default function DemandCard({
 
           <div className="flex-1">
 
-            <h3 className="font-semibold text-gray-900 text-base leading-snug">
+            <h3 className={`font-semibold text-base leading-snug ${
+              inactive ? 'text-gray-500' : 'text-gray-900'
+            }`}>
               {demand.titulo}
             </h3>
 
@@ -192,15 +174,9 @@ export default function DemandCard({
           </div>
 
           <div
-            className={`
-              px-3
-              py-1
-              rounded-full
-              text-xs
-              font-semibold
-              ${prio.bg}
-              ${prio.text}
-            `}
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+              inactive ? 'bg-gray-200 text-gray-500' : `${prio.bg} ${prio.text}`
+            }`}
           >
             {prio.icon} {PRIORITY_LABELS[demand.prioridade]}
           </div>
@@ -210,29 +186,17 @@ export default function DemandCard({
         <div className="flex flex-wrap gap-2 mt-4">
 
           <span
-            className={`
-              px-3
-              py-1
-              rounded-full
-              text-xs
-              font-medium
-              ${status.bg}
-              ${status.text}
-            `}
+            className={`px-3 py-1 rounded-full text-xs font-medium ${
+              inactive ? 'bg-gray-200 text-gray-500' : `${status.bg} ${status.text}`
+            }`}
           >
             {status.icon} {STATUS_LABELS[demand.status]}
           </span>
 
           <span
-            className="
-              px-3
-              py-1
-              rounded-full
-              bg-gray-100
-              text-gray-600
-              text-xs
-              font-medium
-            "
+            className={`px-3 py-1 rounded-full text-xs font-medium ${
+              inactive ? 'bg-gray-200 text-gray-500' : 'bg-gray-100 text-gray-600'
+            }`}
           >
             {TIPO_LABELS[demand.tipo]}
           </span>
@@ -255,18 +219,24 @@ export default function DemandCard({
             </span>
           </div>
 
+          {inactive && demand.dataConclusao && (
+            <div className="flex items-center gap-2 text-gray-500">
+              <span>✅</span>
+              <span>
+                Concluída em {formatDate(demand.dataConclusao)}
+              </span>
+            </div>
+          )}
+
         </div>
 
         {lastUpd && (
           <div
-            className="
-              mt-4
-              bg-gray-50
-              rounded-2xl
-              p-3
-              border
-              border-gray-100
-            "
+            className={`mt-4 rounded-2xl p-3 border ${
+              inactive
+                ? 'bg-gray-50 border-gray-200'
+                : 'bg-gray-50 border-gray-100'
+            }`}
           >
             <p className="text-xs text-gray-400 mb-1">
               Última atualização
@@ -280,12 +250,10 @@ export default function DemandCard({
 
         <div className="mt-4 pt-3 border-t border-gray-100 flex justify-end">
 
-          <span className="text-sm font-medium text-[#1a2744]">
-            {mode === 'update'
-              ? 'Atualizar →'
-              : mode === 'delete'
-              ? 'Excluir →'
-              : 'Ver detalhes →'}
+          <span className={`text-sm font-medium ${
+            inactive ? 'text-gray-400' : 'text-[#1a2744]'
+          }`}>
+            {inactive ? 'Ver / Reativar →' : 'Ver detalhes →'}
           </span>
 
         </div>

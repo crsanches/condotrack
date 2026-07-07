@@ -1,6 +1,7 @@
 {
+  "/_not-found/page": "app/_not-found/page.js",
   "/auth/page": "app/auth/page.js",
   "/dashboard/page": "app/dashboard/page.js",
-  "/relatorios/page": "app/relatorios/page.js",
-  "/relatorios/[slug]/page": "app/relatorios/[slug]/page.js"
+  "/demands/page": "app/demands/page.js",
+  "/tarefas/page": "app/tarefas/page.js"
 }

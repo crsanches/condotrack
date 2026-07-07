@@ -1,6 +1,5 @@
 'use client'
 
-
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
@@ -55,22 +54,12 @@ export default function DemandForm({ existing }: DemandFormProps) {
     }
   }, [status])
 
+  const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
+  const [responsavelId, setResponsavelId] = useState('')
+  const [showNovoResponsavel, setShowNovoResponsavel] = useState(false)
+  const [novoResponsavel, setNovoResponsavel] = useState('')
 
-  const [responsaveis, setResponsaveis] =
-  useState<Responsavel[]>([])
-
-  const [responsavelId, setResponsavelId] =
-  useState('')
-
-  const [showNovoResponsavel, setShowNovoResponsavel] =
-  useState(false)
-
-  const [novoResponsavel, setNovoResponsavel] =
-  useState('')
-
-
-const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigiloso ?? false)
-
+  const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigiloso ?? false)
 
   useEffect(() => {
     if (!user?.condominioId) return
@@ -85,40 +74,38 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
     }
   }, [existing])
 
-  const handleNovoResponsavel = async () => {
+  // indica se o usuário está trocando o responsável de uma demanda existente
+  const transferindo =
+    !!existing?.responsavelId &&
+    !!responsavelId &&
+    responsavelId !== existing.responsavelId
 
+  // indica se está reativando uma demanda concluída
+  const reativando =
+    existing?.status === 'concluida' && status !== 'concluida'
+
+  const handleNovoResponsavel = async () => {
     if (!novoResponsavel.trim() || !user?.condominioId) return
-  
+
     try {
-  
       const novoId = await createResponsavel(user.condominioId, {
         nome: novoResponsavel.trim(),
         role: 'operacional',
       })
-  
+
       const novoItem: Responsavel = {
         id: novoId,
         nome: novoResponsavel.trim(),
         role: 'operacional',
         active: true,
       }
-  
-      setResponsaveis(prev => [
-        ...prev,
-        novoItem,
-      ])
-  
+
+      setResponsaveis(prev => [...prev, novoItem])
       setResponsavelId(novoId)
-  
       setNovoResponsavel('')
-  
       setShowNovoResponsavel(false)
-  
     } catch (error) {
-      console.error(
-        'Erro ao criar responsável:',
-        error
-      )
+      console.error('Erro ao criar responsável:', error)
     }
   }
 
@@ -126,35 +113,55 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
     if (!titulo.trim()) { setError('Informe o título da demanda.'); return }
     if (!tipo) { setError('Selecione o tipo.'); return }
     if (!prioridade) { setError('Selecione a prioridade.'); return }
-    if (!responsavelId) {
-      setError('Selecione o responsável.')
-      return
-    }
+    if (!responsavelId) { setError('Selecione o responsável.'); return }
     if (!user) return
     if (!user.condominioId) { setError('Condomínio não identificado.'); return }
 
     setSaving(true)
     setError('')
-    const responsavelSelecionado =
-    responsaveis.find(
-      r => r.id === responsavelId
-    )
+
+    const responsavelSelecionado = responsaveis.find(r => r.id === responsavelId)
+
     try {
       if (existing) {
+        // monta as anotações automáticas do histórico
+        const notas: string[] = []
+
+        if (transferindo) {
+          notas.push(
+            `🔁 Responsável transferido de ${existing.responsavelNome || 'não definido'} para ${responsavelSelecionado?.nome || ''}.`
+          )
+        }
+
+        if (reativando) {
+          notas.push('🔄 Demanda reativada.')
+        } else if (existing.status !== 'concluida' && status === 'concluida') {
+          notas.push('✅ Demanda concluída.')
+        }
+
+        if (newUpdate.trim()) {
+          notas.push(newUpdate.trim())
+        }
+
         await updateDemand(existing.id, {
           titulo: titulo.trim(),
           tipo,
           prioridade,
           responsavelId,
-          responsavelNome:
-          responsavelSelecionado?.nome || '',
+          responsavelNome: responsavelSelecionado?.nome || '',
           status,
           dataPrevisao: toTs(dataPrevisao),
-          dataConclusao: toTs(dataConclusao),
+          // ao reativar, a data de conclusão é limpa
+          dataConclusao: status === 'concluida' ? toTs(dataConclusao) : null,
           registroSigiloso,
         })
-        if (newUpdate.trim()) {
-          await addUpdate(existing.id, { texto: newUpdate.trim(), autor: user.uid }, existing.atualizacoes)
+
+        if (notas.length > 0) {
+          await addUpdate(
+            existing.id,
+            { texto: notas.join('\n'), autor: user.uid },
+            existing.atualizacoes
+          )
         }
       } else {
         await createDemand(user.condominioId, {
@@ -162,11 +169,10 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           tipo: tipo as DemandType,
           prioridade: prioridade as Priority,
           responsavelId,
-          responsavelNome:
-          responsavelSelecionado?.nome || '',
+          responsavelNome: responsavelSelecionado?.nome || '',
           status,
           dataPrevisao: toTs(dataPrevisao),
-          dataConclusao: toTs(dataConclusao),
+          dataConclusao: status === 'concluida' ? toTs(dataConclusao) : null,
           criadoPor: user.uid,
           primeiraAtualizacao: newUpdate.trim() || undefined,
           registroSigiloso,
@@ -180,12 +186,6 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
     }
   }
 
-  const prioOpts: { value: Priority; label: string; color: string }[] = [
-    { value: 'alta', label: 'Alta', color: 'border-red-400 text-red-600 bg-red-50' },
-    { value: 'media', label: 'Média', color: 'border-amber-400 text-amber-600 bg-amber-50' },
-    { value: 'baixa', label: 'Baixa', color: 'border-green-500 text-green-700 bg-green-50' },
-  ]
-
   const statusOpts: { value: DemandStatus; label: string; emoji: string }[] = [
     { value: 'aberta', label: 'Aberta', emoji: '🔵' },
     { value: 'em_andamento', label: 'Em andamento', emoji: '🟡' },
@@ -194,37 +194,52 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
 
   return (
     <div className="flex-1 overflow-y-auto bg-gray-50 pb-36">
-  
+
       {/* HEADER */}
       <div className="p-4">
         <div className="bg-gradient-to-r from-[#1a2744] to-[#2c4270] rounded-3xl p-5 text-white shadow-lg">
           <p className="text-xs uppercase tracking-[0.2em] text-white/70">
-            {existing ? 'Editar Demanda' : 'Nova Demanda'}
+            {existing ? 'Editar Demanda' : 'Registrar Solicitação'}
           </p>
-  
+
           <h1 className="text-2xl font-bold mt-2">
             {titulo || 'Nova solicitação'}
           </h1>
-  
+
           <p className="text-sm text-white/80 mt-2">
             Gerencie atividades, acompanhe responsáveis e registre atualizações.
           </p>
         </div>
       </div>
-  
+
+      {/* AVISO DEMANDA CONCLUÍDA */}
+      {existing?.status === 'concluida' && (
+        <div className="mx-4 mb-4 bg-gray-100 border border-gray-200 rounded-2xl p-4 flex items-start gap-3">
+          <span className="text-xl">✅</span>
+          <div>
+            <p className="text-sm font-semibold text-gray-700">
+              Esta demanda está concluída
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Para reativá-la, basta alterar o status abaixo e salvar.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* IDENTIFICAÇÃO */}
       <div className="mx-4 mb-4 bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
           📝 Identificação
         </h2>
-  
+
         <div className="space-y-4">
-  
+
           <div>
             <label className="field-label">
               Título da demanda <span className="text-red-500">*</span>
             </label>
-  
+
             <input
               type="text"
               className="form-input text-base"
@@ -233,12 +248,12 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
               placeholder="Ex: Infiltração na cobertura"
             />
           </div>
-  
+
           <div>
             <label className="field-label">
               Tipo <span className="text-red-500">*</span>
             </label>
-  
+
             <select
               className="form-input"
               value={tipo}
@@ -256,81 +271,75 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           </div>
 
           {/* SIGILO */}
-        <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-          <div>
-            <p className="text-sm font-semibold text-amber-800">🔒 Registro sigiloso</p>
-            <p className="text-xs text-amber-600 mt-0.5">
-              Visível apenas para membros com acesso a dados sigilosos
-            </p>
+          <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+            <div>
+              <p className="text-sm font-semibold text-amber-800">🔒 Registro sigiloso</p>
+              <p className="text-xs text-amber-600 mt-0.5">
+                Visível apenas para membros com acesso a dados sigilosos
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setRegistroSigiloso(v => !v)}
+              className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
+                registroSigiloso ? 'bg-amber-500' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${
+                registroSigiloso ? 'translate-x-6' : 'translate-x-0'
+              }`} />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setRegistroSigiloso(v => !v)}
-            className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${
-              registroSigiloso ? 'bg-amber-500' : 'bg-gray-300'
-            }`}
-          >
-            <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${
-              registroSigiloso ? 'translate-x-6' : 'translate-x-0'
-            }`} />
-          </button>
-        </div>
-  
+
           <div>
+            <label className="field-label">
+              Responsável <span className="text-red-500">*</span>
+            </label>
 
-            
-  <label className="field-label">
-    Responsável <span className="text-red-500">*</span>
-  </label>
+            <select
+              className="form-input"
+              value={responsavelId}
+              onChange={(e) => setResponsavelId(e.target.value)}
+            >
+              <option value="">Selecione um responsável</option>
 
-  <select
-    className="form-input"
-    value={responsavelId}
-    onChange={(e) => setResponsavelId(e.target.value)}
-  >
-    <option value="">
-      Selecione um responsável
-    </option>
+              {responsaveis.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nome}
+                </option>
+              ))}
+            </select>
 
-    {responsaveis.map((r) => (
-      <option
-        key={r.id}
-        value={r.id}
-      >
-        {r.nome}
-      </option>
-    ))}
-  </select>
+            {/* AVISO DE TRANSFERÊNCIA */}
+            {transferindo && (
+              <div className="mt-2 bg-blue-50 border border-blue-100 rounded-xl p-3 text-xs text-blue-700">
+                🔁 A transferência de <strong>{existing?.responsavelNome}</strong> para{' '}
+                <strong>{responsaveis.find(r => r.id === responsavelId)?.nome}</strong>{' '}
+                será registrada no histórico ao salvar.
+              </div>
+            )}
 
-  <div className="mt-2">
-    <button
-      type="button"
-      onClick={() =>
-        setShowNovoResponsavel(true)
-      }
-      className="
-        text-sm
-        text-[#1a2744]
-        font-medium
-        hover:underline
-      "
-    >
-      ➕ Cadastrar novo responsável
-    </button>
-  </div>
-
-</div>
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setShowNovoResponsavel(true)}
+                className="text-sm text-[#1a2744] font-medium hover:underline"
+              >
+                ➕ Cadastrar novo responsável
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-  
+
       {/* PRIORIDADE */}
       <div className="mx-4 mb-4 bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
           🚨 Prioridade
         </h2>
-  
+
         <div className="grid grid-cols-3 gap-3">
-  
+
           <button
             type="button"
             onClick={() => setPrioridade('alta')}
@@ -342,7 +351,7 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           >
             🔥 Alta
           </button>
-  
+
           <button
             type="button"
             onClick={() => setPrioridade('media')}
@@ -354,7 +363,7 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           >
             ⚡ Média
           </button>
-  
+
           <button
             type="button"
             onClick={() => setPrioridade('baixa')}
@@ -366,16 +375,16 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           >
             🌱 Baixa
           </button>
-  
+
         </div>
       </div>
-  
+
       {/* STATUS */}
       <div className="mx-4 mb-4 bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
           📊 Status
         </h2>
-  
+
         <div className="grid grid-cols-3 gap-3">
           {statusOpts.map(opt => (
             <button
@@ -395,35 +404,42 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
             </button>
           ))}
         </div>
-  
+
+        {reativando && (
+          <div className="mt-4 rounded-2xl bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700">
+            🔄 Ao salvar, esta demanda será <strong>reativada</strong> e a data de
+            conclusão será removida.
+          </div>
+        )}
+
         <div className="mt-4 rounded-2xl bg-blue-50 border border-blue-100 p-3">
           <div className="text-xs text-blue-500 uppercase font-semibold">
             Resumo atual
           </div>
-  
+
           <div className="mt-1 text-sm text-gray-700">
             Status: <strong>{status.replace('_', ' ')}</strong>
           </div>
-  
+
           <div className="text-sm text-gray-700">
             Prioridade: <strong>{prioridade || 'não definida'}</strong>
           </div>
         </div>
       </div>
-  
+
       {/* DATAS */}
       <div className="mx-4 mb-4 bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
           📅 Datas
         </h2>
-  
+
         <div className="space-y-4">
-  
+
           <div>
             <label className="field-label">
               Previsão de conclusão
             </label>
-  
+
             <input
               type="date"
               className="form-input"
@@ -431,13 +447,13 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
               onChange={e => setDataPrevisao(e.target.value)}
             />
           </div>
-  
+
           {status === 'concluida' && (
             <div>
               <label className="field-label">
                 Data de conclusão real
               </label>
-  
+
               <input
                 type="date"
                 className="form-input"
@@ -448,13 +464,13 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           )}
         </div>
       </div>
-  
+
       {/* ATUALIZAÇÃO */}
       <div className="mx-4 mb-4 bg-white rounded-3xl shadow-sm border border-gray-100 p-5">
         <h2 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
           💬 {existing ? 'Nova atualização' : 'Descrição inicial'}
         </h2>
-  
+
         <textarea
           className="form-input min-h-[140px] resize-none"
           value={newUpdate}
@@ -465,12 +481,12 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
               : 'Detalhe a solicitação...'
           }
         />
-  
+
         <div className="text-right text-xs text-gray-400 mt-2">
           {newUpdate.length} caracteres
         </div>
       </div>
-  
+
       {/* ERRO */}
       {error && (
         <div className="mx-4 mb-4 bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-600">
@@ -479,57 +495,49 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
       )}
 
       {/* MODAL NOVO RESPONSÁVEL */}
-{showNovoResponsavel && (
-  <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      {showNovoResponsavel && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md shadow-xl">
+            <h3 className="text-lg font-semibold mb-4">
+              Novo responsável
+            </h3>
 
-    <div className="bg-white rounded-3xl p-6 w-[90%] max-w-md shadow-xl">
+            <input
+              type="text"
+              className="form-input"
+              value={novoResponsavel}
+              onChange={(e) => setNovoResponsavel(e.target.value)}
+              placeholder="Digite o nome"
+            />
 
-      <h3 className="text-lg font-semibold mb-4">
-        Novo responsável
-      </h3>
+            <div className="flex gap-2 mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNovoResponsavel(false)
+                  setNovoResponsavel('')
+                }}
+                className="btn-secondary flex-1"
+              >
+                Cancelar
+              </button>
 
-      <input
-        type="text"
-        className="form-input"
-        value={novoResponsavel}
-        onChange={(e) =>
-          setNovoResponsavel(e.target.value)
-        }
-        placeholder="Digite o nome"
-      />
+              <button
+                type="button"
+                onClick={handleNovoResponsavel}
+                className="btn-primary flex-1"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      <div className="flex gap-2 mt-4">
-
-        <button
-          type="button"
-          onClick={() => {
-            setShowNovoResponsavel(false)
-            setNovoResponsavel('')
-          }}
-          className="btn-secondary flex-1"
-        >
-          Cancelar
-        </button>
-
-        <button
-          type="button"
-          onClick={handleNovoResponsavel}
-          className="btn-primary flex-1"
-        >
-          Salvar
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-)}
-  
       {/* FOOTER FIXO */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 shadow-2xl">
         <div className="max-w-md mx-auto space-y-2">
-  
+
           <button
             className="btn-primary"
             onClick={handleSave}
@@ -537,21 +545,23 @@ const [registroSigiloso, setRegistroSigiloso] = useState(existing?.registroSigil
           >
             {saving
               ? 'Salvando...'
-              : existing
-                ? '💾 Salvar alterações'
-                : '✅ Registrar demanda'}
+              : reativando
+                ? '🔄 Reativar demanda'
+                : existing
+                  ? '💾 Salvar alterações'
+                  : '✅ Registrar solicitação'}
           </button>
-  
+
           <button
             className="btn-secondary"
             onClick={() => router.back()}
           >
             Cancelar
           </button>
-  
+
         </div>
       </div>
-  
+
     </div>
   )
 }

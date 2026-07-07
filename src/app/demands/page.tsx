@@ -17,15 +17,21 @@ import type {
   Demand,
 } from '@/types'
 
-type SortKey = 'dataCriacao' | 'dataAtualizacao' | 'titulo' | 'dataLimite'| 'prioridade'
+type SortKey = 'dataCriacao' | 'dataAtualizacao' | 'titulo' | 'dataLimite' | 'prioridade'
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
-  { value: 'dataCriacao',     label: 'Data de criação'    },
+  { value: 'dataCriacao',     label: 'Data de criação'     },
   { value: 'dataAtualizacao', label: 'Data de atualização' },
   { value: 'titulo',          label: 'Título'              },
   { value: 'dataLimite',      label: 'Data limite'         },
   { value: 'prioridade',      label: 'Prioridade'          },
 ]
+
+const getTime = (ts: unknown): number => {
+  if (!ts) return 0
+  if (typeof ts === 'string') return new Date(ts).getTime()
+  return (ts as { toDate?: () => Date }).toDate?.().getTime() ?? 0
+}
 
 function sortDemands(demands: Demand[], key: SortKey): Demand[] {
   return [...demands].sort((a, b) => {
@@ -40,17 +46,8 @@ function sortDemands(demands: Demand[], key: SortKey): Demand[] {
       }
 
       case 'dataAtualizacao': {
-        const lastA = a.atualizacoes?.at(-1)?.data
-        const lastB = b.atualizacoes?.at(-1)?.data
-        const ta = typeof lastA === 'string' ? new Date(lastA).getTime() : lastA?.toDate?.().getTime() ?? 0
-        const tb = typeof lastB === 'string' ? new Date(lastB).getTime() : lastB?.toDate?.().getTime() ?? 0
-        return tb - ta
-      }
-
-      case 'dataCriacao':
-      default: {
-        const ta = typeof a.dataCriacao === 'string' ? new Date(a.dataCriacao).getTime() : a.dataCriacao?.toDate?.().getTime() ?? 0
-        const tb = typeof b.dataCriacao === 'string' ? new Date(b.dataCriacao).getTime() : b.dataCriacao?.toDate?.().getTime() ?? 0
+        const ta = getTime(a.atualizacoes?.at(-1)?.data)
+        const tb = getTime(b.atualizacoes?.at(-1)?.data)
         return tb - ta
       }
 
@@ -58,19 +55,30 @@ function sortDemands(demands: Demand[], key: SortKey): Demand[] {
         const peso = { alta: 3, media: 2, baixa: 1 }
         return peso[b.prioridade] - peso[a.prioridade]
       }
+
+      case 'dataCriacao':
+      default:
+        return getTime(b.dataCriacao) - getTime(a.dataCriacao)
     }
   })
 }
+
+// 'pendentes' é um filtro composto: abertas + em andamento
+type StatusFilter = DemandStatus | 'pendentes' | ''
+
+const VALID_STATUS: StatusFilter[] = ['aberta', 'em_andamento', 'concluida', 'pendentes']
 
 function DemandsPageContent() {
   const router = useRouter()
   const params = useSearchParams()
   const { user, loading } = useAuth()
 
-  const mode = (params.get('mode') || 'view') as 'view' | 'update' | 'delete'
+  const statusParam = params.get('status') as StatusFilter | null
+  const initialStatus: StatusFilter =
+    statusParam && VALID_STATUS.includes(statusParam) ? statusParam : ''
 
   const [users, setUsers] = useState<CondoUser[]>([])
-  const [status, setStatus] = useState<DemandStatus | ''>('')
+  const [status, setStatus] = useState<StatusFilter>(initialStatus)
   const [prioridade, setPrioridade] = useState<Priority | ''>('')
   const [tipo, setTipo] = useState<DemandType | ''>('')
   const [responsavel, setResponsavel] = useState('')
@@ -78,8 +86,9 @@ function DemandsPageContent() {
   const [compactView, setCompactView] = useState(true)
   const [sortKey, setSortKey] = useState<SortKey>('dataCriacao')
 
+  // status é filtrado no cliente para que os contadores dos cards
+  // (Abertas / Andamento / Concluídas) permaneçam sempre corretos
   const { demands, loading: demandsLoading } = useDemands({
-    status: status || undefined,
     prioridade: prioridade || undefined,
     tipo: tipo || undefined,
     responsavel: responsavel || undefined,
@@ -91,32 +100,40 @@ function DemandsPageContent() {
 
   useEffect(() => {
     if (!user?.condominioId) return
-    getAllUsers(user.condominioId).then(setUsers) 
+    getAllUsers(user.condominioId).then(setUsers)
     getAllResponsaveis(user.condominioId).then(setResponsaveis)
   }, [user?.condominioId])
 
-  useEffect(() => {
-    if (!loading && user && mode === 'delete' && !user.canDelete) {
-      router.replace('/demands')
-    }
-  }, [user, loading, mode, router])
-
   if (loading || !user) return null
-
-  const title =
-    mode === 'update' ? 'Atualizar demanda' :
-    mode === 'delete' ? 'Excluir demanda'   :
-    'Consultar demandas'
 
   const abertas    = demands.filter(d => d.status === 'aberta').length
   const andamento  = demands.filter(d => d.status === 'em_andamento').length
-  const concluidas = demands.filter(d => d.status === 'concluida').length
+  const concluidasCount = demands.filter(d => d.status === 'concluida').length
 
-  const sortedDemands = sortDemands(demands, sortKey)
+  const toggleStatus = (s: DemandStatus) =>
+    setStatus(prev => (prev === s ? '' : s))
+
+  // aplica filtro de status no cliente
+  const filtered =
+    status === 'pendentes'
+      ? demands.filter(d => d.status !== 'concluida')
+      : status
+      ? demands.filter(d => d.status === status)
+      : demands
+
+  // ativas primeiro (com a ordenação escolhida),
+  // concluídas por último, ordenadas por data de conclusão (mais recente primeiro)
+  const ativas = sortDemands(
+    filtered.filter(d => d.status !== 'concluida'),
+    sortKey
+  )
+  const concluidas = [...filtered.filter(d => d.status === 'concluida')].sort(
+    (a, b) => getTime(b.dataConclusao) - getTime(a.dataConclusao)
+  )
 
   return (
     <>
-      <Header title={title} showBack backHref="/dashboard" />
+      <Header title="Demandas" showBack backHref="/dashboard" />
 
       <div className="min-h-screen bg-gray-50">
 
@@ -126,29 +143,68 @@ function DemandsPageContent() {
             <p className="text-xs uppercase tracking-widest text-white/70">
               Gestão de Demandas
             </p>
-            <h1 className="text-2xl font-bold mt-2">{title}</h1>
+            <h1 className="text-2xl font-bold mt-2">Demandas</h1>
             <p className="text-sm text-white/80 mt-2">
               {demands.length} demandas encontradas
             </p>
+
+            <button
+              onClick={() => router.push('/demands/nova')}
+              className="mt-4 w-full bg-white text-[#1a2744] font-semibold rounded-2xl py-3 shadow-md active:scale-[0.98] transition-transform"
+            >
+              ➕ Registrar solicitação
+            </button>
           </div>
         </div>
 
-        {/* RESUMO */}
+        {/* RESUMO — cards clicáveis (filtram a lista) */}
         <div className="px-4 mt-4">
           <div className="grid grid-cols-3 gap-3">
-            <div className="bg-red-50 rounded-3xl p-4 border border-red-100">
+            <button
+              onClick={() => toggleStatus('aberta')}
+              className={`bg-red-50 rounded-3xl p-4 border text-left transition-all ${
+                status === 'aberta' || status === 'pendentes'
+                  ? 'border-red-400 ring-2 ring-red-300 shadow-md'
+                  : 'border-red-100'
+              }`}
+            >
               <p className="text-xs text-red-500 uppercase">Abertas</p>
               <p className="text-2xl font-bold text-red-600 mt-1">{abertas}</p>
-            </div>
-            <div className="bg-amber-50 rounded-3xl p-4 border border-amber-100">
+            </button>
+
+            <button
+              onClick={() => toggleStatus('em_andamento')}
+              className={`bg-amber-50 rounded-3xl p-4 border text-left transition-all ${
+                status === 'em_andamento' || status === 'pendentes'
+                  ? 'border-amber-400 ring-2 ring-amber-300 shadow-md'
+                  : 'border-amber-100'
+              }`}
+            >
               <p className="text-xs text-amber-600 uppercase">Andamento</p>
               <p className="text-2xl font-bold text-amber-700 mt-1">{andamento}</p>
-            </div>
-            <div className="bg-green-50 rounded-3xl p-4 border border-green-100">
+            </button>
+
+            <button
+              onClick={() => toggleStatus('concluida')}
+              className={`bg-green-50 rounded-3xl p-4 border text-left transition-all ${
+                status === 'concluida'
+                  ? 'border-green-500 ring-2 ring-green-300 shadow-md'
+                  : 'border-green-100'
+              }`}
+            >
               <p className="text-xs text-green-600 uppercase">Concluídas</p>
-              <p className="text-2xl font-bold text-green-700 mt-1">{concluidas}</p>
-            </div>
+              <p className="text-2xl font-bold text-green-700 mt-1">{concluidasCount}</p>
+            </button>
           </div>
+
+          {status && (
+            <button
+              onClick={() => setStatus('')}
+              className="mt-2 text-xs text-[#1a2744] font-medium"
+            >
+              ✕ Limpar filtro de status
+            </button>
+          )}
         </div>
 
         {/* FILTROS */}
@@ -163,12 +219,6 @@ function DemandsPageContent() {
             </button>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <select className="form-input text-sm" value={status} onChange={e => setStatus(e.target.value as DemandStatus | '')}>
-              <option value="">Todos os status</option>
-              <option value="aberta">Aberta</option>
-              <option value="em_andamento">Em andamento</option>
-              <option value="concluida">Concluída</option>
-            </select>
             <select className="form-input text-sm" value={prioridade} onChange={e => setPrioridade(e.target.value as Priority | '')}>
               <option value="">Toda prioridade</option>
               <option value="alta">🔥 Alta</option>
@@ -185,7 +235,7 @@ function DemandsPageContent() {
               <option value="obra">Obra</option>
               <option value="outro">Outro</option>
             </select>
-            <select className="form-input text-sm" value={responsavel} onChange={e => setResponsavel(e.target.value)}>
+            <select className="form-input text-sm col-span-2" value={responsavel} onChange={e => setResponsavel(e.target.value)}>
               <option value="">Todos responsáveis</option>
               {responsaveis.map(r => (
                 <option key={r.id} value={r.id}>{r.nome}</option>
@@ -216,7 +266,7 @@ function DemandsPageContent() {
             </button>
 
             <div className="ml-auto flex flex-col items-end gap-1">
-              <label className="text-ls text-blue-600 font-medium">
+              <label className="text-xs text-blue-600 font-medium">
                 Ordenar por:
               </label>
               <select
@@ -239,24 +289,47 @@ function DemandsPageContent() {
             <div className="bg-white rounded-3xl p-10 text-center shadow-sm">
               <p className="text-gray-400">Carregando demandas...</p>
             </div>
-          ) : sortedDemands.length === 0 ? (
+          ) : ativas.length === 0 && concluidas.length === 0 ? (
             <div className="bg-white rounded-3xl border border-gray-100 p-10 text-center shadow-sm">
               <div className="text-6xl mb-4">📭</div>
               <h3 className="font-semibold text-gray-700">Nenhuma demanda encontrada</h3>
               <p className="text-sm text-gray-400 mt-2">
-                Tente alterar os filtros ou registrar uma nova demanda.
+                Tente alterar os filtros ou registrar uma nova solicitação.
               </p>
             </div>
           ) : (
-            sortedDemands.map(demand => (
-              <DemandCard
-                key={demand.id}
-                demand={demand}
-                users={users}
-                mode={mode}
-                compact={compactView}
-              />
-            ))
+            <>
+              {ativas.map(demand => (
+                <DemandCard
+                  key={demand.id}
+                  demand={demand}
+                  users={users}
+                  compact={compactView}
+                />
+              ))}
+
+              {concluidas.length > 0 && (
+                <>
+                  {ativas.length > 0 && (
+                    <div className="flex items-center gap-3 pt-2">
+                      <div className="flex-1 h-px bg-gray-200" />
+                      <span className="text-xs text-gray-400 font-medium uppercase tracking-wide">
+                        Concluídas
+                      </span>
+                      <div className="flex-1 h-px bg-gray-200" />
+                    </div>
+                  )}
+                  {concluidas.map(demand => (
+                    <DemandCard
+                      key={demand.id}
+                      demand={demand}
+                      users={users}
+                      compact={compactView}
+                    />
+                  ))}
+                </>
+              )}
+            </>
           )}
         </div>
 
@@ -264,7 +337,6 @@ function DemandsPageContent() {
     </>
   )
 }
-
 
 export default function DemandsPage() {
   return (

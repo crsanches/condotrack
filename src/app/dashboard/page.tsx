@@ -120,7 +120,7 @@ export default function DashboardPage() {
                 {initials}
               </div>
               <div>
-                
+
                 <h1 className="text-xl font-bold">{user.name}</h1>
                 {condominio && (
                   <p className="text-sm text-white/90 mt-0.5">{condominio.nome}</p>
@@ -133,15 +133,17 @@ export default function DashboardPage() {
           </div>
         </div>
 
-
-{/* CARD ALERTA DEMANDAS */}
-{stats && stats.abertas + stats.em_andamento > 0 && (
+        {/* CARD ALERTA DEMANDAS — agora clicável, abre a lista */}
+        {stats && stats.abertas + stats.em_andamento > 0 && (
           <div className="px-4 mt-5">
-            <div className="bg-gradient-to-r from-red-500 to-red-600 rounded-3xl p-5 text-white shadow-lg">
+            <button
+              onClick={() => router.push('/demands')}
+              className="w-full bg-gradient-to-r from-red-500 to-red-600 rounded-3xl p-5 text-white shadow-lg text-left"
+            >
               <div className="text-sm uppercase tracking-wider text-white/80">Atenção - Demandas Conselho e Síndico</div>
               <div className="text-3xl font-bold mt-1">{stats.abertas + stats.em_andamento}</div>
               <div className="text-sm mt-1">demandas aguardando conclusão</div>
-            </div>
+            </button>
           </div>
         )}
 
@@ -163,25 +165,34 @@ export default function DashboardPage() {
 
         {/* STATS DEMANDAS */}
         <div className="px-4 mt-6">
-        <h2 className="text-sm font-semibold text-blue-800 uppercase tracking-wider mb-3">
+          <h2 className="text-sm font-semibold text-blue-800 uppercase tracking-wider mb-3">
             Bloco das demandas:
           </h2>
         </div>
         {stats && (
           <div className="px-4 mt-4">
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100">
+              <button
+                onClick={() => router.push('/demands')}
+                className="bg-white rounded-3xl p-4 shadow-sm border border-gray-100 text-left active:scale-[0.98] transition-transform"
+              >
                 <p className="text-xs text-gray-400 uppercase tracking-wider">Total Demandas Cadastradas</p>
                 <p className="text-3xl font-bold text-[#1a2744] mt-1">{stats.total}</p>
-              </div>
-              <div className="bg-red-50 rounded-3xl p-4 border border-red-100">
+              </button>
+              <button
+                onClick={() => router.push('/demands?status=pendentes')}
+                className="bg-red-50 rounded-3xl p-4 border border-red-100 text-left active:scale-[0.98] transition-transform"
+              >
                 <p className="text-xs text-red-400 uppercase tracking-wider">Total Demandas Pendentes</p>
                 <p className="text-3xl font-bold text-red-600 mt-1">{stats.abertas + stats.em_andamento}</p>
-              </div>
-              <div className="bg-green-50 rounded-3xl p-4 border border-green-100">
+              </button>
+              <button
+                onClick={() => router.push('/demands?status=concluida')}
+                className="bg-green-50 rounded-3xl p-4 border border-green-100 text-left active:scale-[0.98] transition-transform"
+              >
                 <p className="text-xs text-green-500 uppercase tracking-wider">Total Demandas Concluídas</p>
                 <p className="text-3xl font-bold text-green-700 mt-1">{stats.concluidas}</p>
-              </div>
+              </button>
             </div>
           </div>
         )}
@@ -233,21 +244,16 @@ export default function DashboardPage() {
           <div className="grid grid-cols-2 gap-4">
 
             <button
-              onClick={() => router.push('/demands/nova')}
-              className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
-            >
-              <div className="text-4xl mb-3">➕</div>
-              <div className="font-semibold text-gray-800">Nova Demanda</div>
-              <div className="text-xs text-gray-500 mt-1">Registrar solicitação</div>
-            </button>
-
-            <button
               onClick={() => router.push('/demands')}
               className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 text-left"
             >
-              <div className="text-4xl mb-3">🔍</div>
-              <div className="font-semibold text-gray-800">Consultar</div>
-              <div className="text-xs text-gray-500 mt-1">Ver todas as demandas</div>
+              <div className="text-4xl mb-3">📋</div>
+              <div className="font-semibold text-gray-800">Demandas</div>
+              <div className="text-xs text-gray-500 mt-1">
+                {stats && stats.abertas + stats.em_andamento > 0
+                  ? <span className="text-red-500 font-medium">{stats.abertas + stats.em_andamento} pendente{stats.abertas + stats.em_andamento > 1 ? 's' : ''}</span>
+                  : 'Registrar e acompanhar'}
+              </div>
             </button>
 
             <button
@@ -303,8 +309,6 @@ export default function DashboardPage() {
 
           </div>
         </div>
-
-       
 
         <div className="pb-8" />
 
