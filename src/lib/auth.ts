@@ -55,7 +55,7 @@ export async function signupComConvite(
     name: dados.name,
     email: dados.email,
     role: convite.role,
-    canDelete: convite.role === 'sindico',
+    canDelete: convite.role === 'sindico'|| convite.role === 'super_admin',
     active: true,
     condominioId,
     ...(dados.telefone ? { telefone: dados.telefone, telefoneVerificado: false } : {}),

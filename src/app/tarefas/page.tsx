@@ -46,15 +46,22 @@ function formatDate(ts: unknown): string {
 export default function TarefasPage() {
   const router = useRouter()
   const pathname = usePathname()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [itens, setItens] = useState<TarefaComStatus[]>([])
   const [loadingData, setLoadingData] = useState(true)
   const [filtroStatus, setFiltroStatus] = useState<StatusTarefa | ''>('')
 
   useEffect(() => {
-    if (!loading && !user) router.replace('/auth')
-  }, [user, loading, router])
+    if (!loading && !user) {
+      router.replace('/auth')
+      return
+    }
+  
+    if (!loading && user && !isManager) {
+      router.replace('/tarefas')
+    }
+  }, [user, loading, isManager, router])
 
   
   const load = useCallback(async () => {
@@ -125,7 +132,7 @@ export default function TarefasPage() {
     em_dia:          itens.filter(i => i.status === 'em_dia').length,
   }
 
-  const isSindico = user.role === 'sindico' || user.role === 'subsindico'
+  const canManage = isManager
 
   return (
     <>
@@ -168,7 +175,7 @@ export default function TarefasPage() {
         </div>
 
         {/* BOTÃO NOVA TAREFA */}
-        {isSindico && (
+        {isManager && (
           <div className="px-4 mt-4">
             <button
               onClick={() => router.push('/tarefas/nova')}
@@ -236,7 +243,7 @@ export default function TarefasPage() {
                       >
                         Histórico
                       </button>
-                      {isSindico && (
+                      {isManager && (
                         <button
                           onClick={() => router.push(`/tarefas/${tarefa.id}/editar`)}
                           className="px-4 bg-gray-100 text-gray-700 rounded-2xl py-2.5 text-sm font-medium"

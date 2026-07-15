@@ -26,7 +26,7 @@ const isLate = (ts: unknown) => {
 
 export default function DashboardPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, permissions, isManager, isSuperAdmin } = useAuth()
   const [stats, setStats] = useState<Stats | null>(null)
   const [recentDemands, setRecentDemands] = useState<Demand[]>([])
   const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0)
@@ -98,20 +98,23 @@ export default function DashboardPage() {
   return (
     <>
       <Header
-        title="CondoTrack"
-        showLogout
-        rightAction={
-          user.role === 'sindico' ? settingsMenu :
-          user.role === 'super_admin' ? (
-            <button
-              onClick={() => router.push('/admin/plataforma/convites')}
-              className="text-xs font-medium bg-blue/20 text-blue px-3 py-2 rounded-xl whitespace-nowrap"
-            >
-              🔗 Convites
-            </button>
-          ) : undefined
-        }
-      />
+  title="CondoTrack"
+  showLogout
+  rightAction={
+    <>
+      {isManager && settingsMenu}
+
+      {isSuperAdmin&& (
+        <button
+          onClick={() => router.push('/admin/plataforma/convites')}
+          className="text-xs font-medium bg-blue/20 text-blue px-3 py-2 rounded-xl whitespace-nowrap"
+        >
+          🔗 Convites
+        </button>
+      )}
+    </>
+  }
+/>
 
       <div className="min-h-screen bg-gray-50">
 

@@ -28,7 +28,7 @@ function formatDoc(value: string) {
 export default function NovaCotacaoPage() {
   const router = useRouter()
   const { id: orcamentoId } = useParams<{ id: string }>()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [tituloOrcamento, setTituloOrcamento] = useState('')
   const [fornecedor, setFornecedor] = useState('')
@@ -47,10 +47,11 @@ export default function NovaCotacaoPage() {
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
-    if (!loading && user && user.role !== 'sindico' && user.role !== 'subsindico') {
+
+    if (!isManager) {
       router.replace(`/orcamentos/${orcamentoId}`)
     }
-  }, [user, loading, router, orcamentoId])
+  }, [user, loading, router, orcamentoId, isManager])
 
   useEffect(() => {
     if (!orcamentoId) return

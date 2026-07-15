@@ -8,13 +8,35 @@ import { getUser } from '@/lib/firestore'
 interface AuthContextValue {
   user: CondoUser | null
   loading: boolean
+
   isSuperAdmin: boolean
+  isManager: boolean
+
+  permissions: {
+    manageBudgets: boolean
+    manageContracts: boolean
+    manageDemands: boolean
+    manageTasks: boolean
+    manageUsers: boolean
+    managePlatform: boolean
+  }
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
   loading: true,
+
   isSuperAdmin: false,
+  isManager: false,
+
+  permissions: {
+    manageBudgets: false,
+    manageContracts: false,
+    manageDemands: false,
+    manageTasks: false,
+    manageUsers: false,
+    managePlatform: false,
+  },
 })
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -41,9 +63,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const isSuperAdmin = user?.role === 'super_admin'
 
+  const isManager =
+    isSuperAdmin ||
+    user?.role === 'sindico' ||
+    user?.role === 'subsindico'
+  
+  const permissions = {
+    manageBudgets: isManager,
+    manageContracts: isManager,
+    manageDemands: isManager,
+    manageTasks: isManager,
+    manageUsers: isManager,
+    managePlatform: isSuperAdmin,
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, isSuperAdmin }}>
-      {children}
+<AuthContext.Provider
+  value={{
+    user,
+    loading,
+
+    isSuperAdmin,
+    isManager,
+
+    permissions,
+  }}
+>      {children}
     </AuthContext.Provider>
   )
 }

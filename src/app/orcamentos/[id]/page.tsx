@@ -37,7 +37,7 @@ function formatDateTime(ts: Timestamp | undefined | null) {
 export default function OrcamentoDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [orcamento, setOrcamento] = useState<Orcamento | null>(null)
   const [cotacoes, setCotacoes] = useState<Cotacao[]>([])
@@ -60,12 +60,13 @@ export default function OrcamentoDetailPage() {
   const [showDelete, setShowDelete] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  const canManage = user?.role === 'sindico' || user?.role === 'subsindico'
   const canSeeSigilo = user?.acessoSigilo === true
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
   }, [user, loading, router])
+
+const canManage = isManager
 
   async function load() {
     const [o, c] = await Promise.all([getOrcamento(id), getCotacoes(id)])

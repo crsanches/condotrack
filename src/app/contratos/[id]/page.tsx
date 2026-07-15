@@ -35,7 +35,7 @@ function diasParaVencer(ts: unknown): number {
 export default function ContratoDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [contrato, setContrato] = useState<Contrato | null>(null)
   const [loadingData, setLoadingData] = useState(true)
@@ -101,7 +101,7 @@ export default function ContratoDetailPage() {
     </>
   )
 
-  const isSindico = user.role === 'sindico' || user.role === 'subsindico'
+  const canManage = isManager
   const cfg = STATUS_CONFIG[contrato.status]
   const dias = diasParaVencer(contrato.dataVencimento)
   const vencido = dias < 0
@@ -193,7 +193,7 @@ export default function ContratoDetailPage() {
         )}
 
         {/* SIGILO — só síndico pode alterar */}
-        {isSindico && (
+        {canManage && (
           <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
             <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-2xl">
               <div>
@@ -218,7 +218,7 @@ export default function ContratoDetailPage() {
         )}
 
         {/* ALTERAR STATUS */}
-        {isSindico && (
+        {canManage && (
           <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-5">
             <h2 className="font-semibold text-gray-800 mb-3">Alterar status</h2>
             <div className="grid grid-cols-3 gap-2">
@@ -250,7 +250,7 @@ export default function ContratoDetailPage() {
         )}
 
         {/* AÇÕES */}
-        {isSindico && (
+        {canManage && (
           <div className="px-4 mt-4">
             <button
               onClick={() => router.push(`/contratos/${id}/editar`)}

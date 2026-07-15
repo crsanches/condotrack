@@ -45,7 +45,7 @@ function formatDateTime(ts: unknown): string {
 export default function TarefaDetailPage() {
   const router = useRouter()
   const { id } = useParams<{ id: string }>()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [tarefa, setTarefa] = useState<TarefaPeriodica | null>(null)
   const [registros, setRegistros] = useState<RegistroTarefa[]>([])
@@ -109,7 +109,7 @@ export default function TarefaDetailPage() {
   )
 
   const cfg = status ? STATUS_CONFIG[status] : STATUS_CONFIG.nunca_executada
-  const isSindico = user.role === 'sindico' || user.role === 'subsindico'
+  const canManage = isManager
 
   return (
     <>
@@ -171,7 +171,7 @@ export default function TarefaDetailPage() {
           >
             ✅ Registrar execução
           </button>
-          {isSindico && (
+          {isManager && (
             <>
               <button
                 onClick={() => router.push(`/tarefas/${id}/editar`)}

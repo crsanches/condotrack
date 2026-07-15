@@ -8,7 +8,7 @@ import { createOrcamento } from '@/lib/firestore'
 
 export default function NovoOrcamentoPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -17,11 +17,15 @@ export default function NovoOrcamentoPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!loading && !user) router.replace('/auth')
-    if (!loading && user && user.role !== 'sindico' && user.role !== 'subsindico') {
+    if (!loading && !user) {
+      router.replace('/auth')
+      return
+    }
+  
+    if (!loading && user && !isManager) {
       router.replace('/orcamentos')
     }
-  }, [user, loading, router])
+  }, [user, loading, isManager, router])
 
   async function handleSave() {
     if (!user?.condominioId) { setError('Usuário sem condomínio associado.'); return }

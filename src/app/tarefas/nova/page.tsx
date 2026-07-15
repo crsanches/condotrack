@@ -20,7 +20,7 @@ const DIAS_SEMANA = [
 
 export default function NovaTarefaPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
 
   const [titulo, setTitulo] = useState('')
   const [descricao, setDescricao] = useState('')
@@ -34,8 +34,15 @@ export default function NovaTarefaPage() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (!loading && !user) router.replace('/auth')
-  }, [user, loading, router])
+    if (!loading && !user) {
+      router.replace('/auth')
+      return
+    }
+  
+    if (!loading && user && !isManager) {
+      router.replace('/tarefas/[id]')
+    }
+  }, [user, loading, isManager, router])
 
   useEffect(() => {
     if (!user?.condominioId) return

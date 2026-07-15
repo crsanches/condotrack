@@ -15,12 +15,11 @@ function statusLabel(o: Orcamento) {
 
 export default function OrcamentosPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, isManager } = useAuth()
   const [orcamentos, setOrcamentos] = useState<Orcamento[]>([])
   const [fetching, setFetching] = useState(true)
   const [filtro, setFiltro] = useState<'todos' | 'aberto' | 'concluido'>('todos')
 
-  const canManage = user?.role === 'sindico' || user?.role === 'subsindico'
   const canSeeSigilo = user?.acessoSigilo === true
 
   useEffect(() => {
@@ -50,7 +49,7 @@ export default function OrcamentosPage() {
         showBack
         backHref="/"
         rightAction={
-          canManage ? (
+          isManager ? (
             <button
               onClick={() => router.push('/orcamentos/novo')}
               className="px-4 h-10 rounded-xl bg-[#1a2744] text-white text-sm font-semibold"
@@ -108,7 +107,7 @@ export default function OrcamentosPage() {
             <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8 text-center">
               <p className="text-4xl mb-3">📋</p>
               <p className="text-gray-500 text-sm">Nenhum orçamento encontrado.</p>
-              {canManage && (
+              {isManager && (
                 <button
                   onClick={() => router.push('/orcamentos/novo')}
                   className="mt-4 text-[#1a2744] font-semibold text-sm underline"

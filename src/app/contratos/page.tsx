@@ -47,7 +47,8 @@ type FiltroVenc   = 'todos' | 'vencendo' | 'vencido'
 
 export default function ContratosPage() {
   const router = useRouter()
-  const { user, loading } = useAuth()
+  const { user, loading, permissions } = useAuth()
+  const canManage = permissions.manageContracts
 
   const [contratos, setContratos] = useState<Contrato[]>([])
   const [loadingData, setLoadingData] = useState(true)
@@ -76,7 +77,6 @@ export default function ContratosPage() {
 
   if (loading || !user) return null
 
-  const isSindico = user.role === 'sindico' || user.role === 'subsindico'
 
   const filtrados = contratos.filter(c => {
     if (filtroStatus && c.status !== filtroStatus) return false
@@ -181,7 +181,7 @@ export default function ContratosPage() {
         )}
 
         {/* BOTÃO NOVO */}
-        {isSindico && (
+        {canManage && (
           <div className="px-4 mt-4">
             <button
               onClick={() => router.push('/contratos/novo')}
