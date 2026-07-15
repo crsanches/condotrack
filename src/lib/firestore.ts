@@ -48,7 +48,7 @@ export async function getAllUsers(condominioId: string): Promise<CondoUser[]> {
 
 export async function updateUser(
   uid: string,
-  data: Partial<Pick<CondoUser, 'name' | 'role' | 'telefone' | 'active'>>
+  data: Partial<Pick<CondoUser, 'name' | 'role' | 'telefone' | 'active' | 'acessoSigilo'>>
 ): Promise<void> {
   await updateDoc(doc(db, 'users', uid), data)
 }
@@ -234,33 +234,49 @@ export async function deleteDemand(id: string): Promise<void> {
   await deleteDoc(doc(db, 'demands', id))
 }
  
+
 export async function getDemandStats(condominioId: string): Promise<{
   total: number
   abertas: number
   em_andamento: number
   concluidas: number
+  sigilosas: number
+  sigilosasPendentes: number
 }> {
   const snap = await getDocs(
     query(collection(db, 'demands'), where('condominioId', '==', condominioId))
   )
-  const demands = snap.docs.map((d) => d.data() as Demand)
+  const all = snap.docs.map((d) => d.data() as Demand)
+  const publicas = all.filter((d) => !d.registroSigiloso)
+  const sigilosas = all.filter((d) => d.registroSigiloso)
+
   return {
-    total: demands.length,
-    abertas: demands.filter((d) => d.status === 'aberta').length,
-    em_andamento: demands.filter((d) => d.status === 'em_andamento').length,
-    concluidas: demands.filter((d) => d.status === 'concluida').length,
+    total: publicas.length,
+    abertas: publicas.filter((d) => d.status === 'aberta').length,
+    em_andamento: publicas.filter((d) => d.status === 'em_andamento').length,
+    concluidas: publicas.filter((d) => d.status === 'concluida').length,
+    sigilosas: sigilosas.length,
+    sigilosasPendentes: sigilosas.filter((d) => d.status !== 'concluida').length,
   }
 }
  
-export async function getRecentDemands(condominioId: string, limit = 5): Promise<Demand[]> {
+
+export async function getRecentDemands(
+  condominioId: string,
+  limit = 5,
+  acessoSigilo = false
+): Promise<Demand[]> {
   const q = query(
     collection(db, 'demands'),
     where('condominioId', '==', condominioId),
     orderBy('dataCriacao', 'desc'),
-    firestoreLimit(limit)
+    firestoreLimit(limit * 2) // margem para compensar as filtradas
   )
   const snap = await getDocs(q)
-  return snap.docs.map(d => ({ id: d.id, ...d.data() } as Demand))
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() } as Demand))
+    .filter(d => acessoSigilo || !d.registroSigiloso)
+    .slice(0, limit)
 }
 
 

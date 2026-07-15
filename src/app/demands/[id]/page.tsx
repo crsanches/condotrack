@@ -29,10 +29,15 @@ export default function DemandDetailPage() {
 
   useEffect(() => {
     if (!id || !user?.condominioId) return
-    getDemand(id).then(setDemand)
+    getDemand(id).then(d => {
+      if (d?.registroSigiloso && !(user.acessoSigilo ?? false)) {
+        router.replace('/demands')
+        return
+      }
+      setDemand(d)
+    })
     getAllUsers(user.condominioId).then(setUsers)
-  }, [id, user?.condominioId])
-
+  }, [id, user?.condominioId, user?.acessoSigilo])
   const formatDate = (ts: unknown) => {
     if (!ts) return '—'
     const d = (ts as { toDate?: () => Date }).toDate ? (ts as { toDate: () => Date }).toDate() : new Date(ts as string)
@@ -82,7 +87,7 @@ export default function DemandDetailPage() {
           {/* Info grid */}
           <div className="bg-gray-50 rounded-xl divide-y divide-gray-100">
             {[
-              ['Responsável', responsavel?.name || demand.responsavelNome],
+              ['Responsável',demand.responsavelNome],
               ['Criada em', formatDate(demand.dataCriacao)],
               ...(demand.dataConclusao ? [['Concluída em', formatDate(demand.dataConclusao)]] : []),
             ].map(([label, value]) => (

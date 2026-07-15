@@ -8,7 +8,9 @@ import { getDemandStats, getRecentDemands, getAllTarefas, getUltimoRegistro, cal
 import type { Demand, Condominio } from '@/types'
 import { ROLE_LABELS } from '@/types'
 
-interface Stats { total: number; abertas: number; em_andamento: number; concluidas: number }
+interface Stats { total: number; abertas: number; em_andamento: number; concluidas: number;sigilosas: number; sigilosasPendentes: number }
+
+
 
 const formatDate = (ts: unknown) => {
   if (!ts) return '—'
@@ -30,6 +32,7 @@ export default function DashboardPage() {
   const [tarefasAtrasadas, setTarefasAtrasadas] = useState(0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [condominio, setCondominio] = useState<Condominio | null>(null)
+  const temAcessoSigilo = user?.acessoSigilo ?? false
 
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
@@ -38,10 +41,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!user?.condominioId) return
     getDemandStats(user.condominioId).then(setStats)
-    getRecentDemands(user.condominioId, 5).then(setRecentDemands)
+    getRecentDemands(user.condominioId, 5, temAcessoSigilo).then(setRecentDemands)
     loadTarefasStatus(user.condominioId)
     getCondominio(user.condominioId).then(setCondominio)
-  }, [user?.condominioId])
+  }, [user?.condominioId, temAcessoSigilo])
 
   async function loadTarefasStatus(condominioId: string) {
     const tarefas = await getAllTarefas(condominioId)
@@ -147,6 +150,29 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* CARD DEMANDAS PRIVATIVAS */}
+        {stats && stats.sigilosas > 0 && (
+          <div className="px-4 mt-3">
+            <button
+              onClick={() => temAcessoSigilo && router.push('/demands?sigilo=1')}
+              disabled={!temAcessoSigilo}
+              className={`w-full bg-gradient-to-r from-[#4a3a6b] to-[#6b5b95] rounded-3xl p-5 text-white shadow-lg text-left transition-opacity ${
+                temAcessoSigilo ? '' : 'opacity-40 cursor-not-allowed'
+              }`}
+            >
+              <div className="text-sm uppercase tracking-wider text-white/80">
+                🔒 Demandas privativas
+              </div>
+              <div className="text-3xl font-bold mt-1">{stats.sigilosas}</div>
+              <div className="text-sm mt-1">
+                {temAcessoSigilo
+                  ? `${stats.sigilosasPendentes} pendente${stats.sigilosasPendentes === 1 ? '' : 's'} — toque para ver`
+                  : 'Acesso restrito'}
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* CARD ALERTA TAREFAS */}
         {tarefasAtrasadas > 0 && (
           <div className="px-4 mt-3">
@@ -166,7 +192,7 @@ export default function DashboardPage() {
         {/* STATS DEMANDAS */}
         <div className="px-4 mt-6">
           <h2 className="text-sm font-semibold text-blue-800 uppercase tracking-wider mb-3">
-            Bloco das demandas:
+            Bloco das demandas não privativas:
           </h2>
         </div>
         {stats && (

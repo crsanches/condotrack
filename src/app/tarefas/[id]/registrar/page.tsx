@@ -33,7 +33,7 @@ export default function RegistrarTarefaPage() {
   const [responsaveis, setResponsaveis] = useState<Responsavel[]>([])
   const [responsavelId, setResponsavelId] = useState('')
   const [dataRealizacao, setDataRealizacao] = useState(
-    new Date().toISOString().split('T')[0]
+    new Date().toLocaleDateString('sv-SE') // YYYY-MM-DD no fuso local (evita virar o dia às 21h em UTC-3)
   )
   const [observacao, setObservacao] = useState('')
   const [foto, setFoto] = useState<File | null>(null)

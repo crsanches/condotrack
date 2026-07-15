@@ -94,6 +94,10 @@ function DemandsPageContent() {
     responsavel: responsavel || undefined,
   })
 
+  const [somentePrivativas, setSomentePrivativas] = useState(
+    params.get('sigilo') === '1'
+  )
+
   useEffect(() => {
     if (!loading && !user) router.replace('/auth')
   }, [user, loading, router])
@@ -106,20 +110,28 @@ function DemandsPageContent() {
 
   if (loading || !user) return null
 
-  const abertas    = demands.filter(d => d.status === 'aberta').length
-  const andamento  = demands.filter(d => d.status === 'em_andamento').length
-  const concluidasCount = demands.filter(d => d.status === 'concluida').length
+ 
 
   const toggleStatus = (s: DemandStatus) =>
     setStatus(prev => (prev === s ? '' : s))
 
+const base = somentePrivativas
+  ? demands.filter(d => d.registroSigiloso)
+  : demands
+
+const abertas         = base.filter(d => d.status === 'aberta').length
+const andamento       = base.filter(d => d.status === 'em_andamento').length
+const concluidasCount = base.filter(d => d.status === 'concluida').length
+
+
+
   // aplica filtro de status no cliente
   const filtered =
-    status === 'pendentes'
-      ? demands.filter(d => d.status !== 'concluida')
-      : status
-      ? demands.filter(d => d.status === status)
-      : demands
+  status === 'pendentes'
+    ? base.filter(d => d.status !== 'concluida')
+    : status
+    ? base.filter(d => d.status === status)
+    : base
 
   // ativas primeiro (com a ordenação escolhida),
   // concluídas por último, ordenadas por data de conclusão (mais recente primeiro)
@@ -145,7 +157,7 @@ function DemandsPageContent() {
             </p>
             <h1 className="text-2xl font-bold mt-2">Demandas</h1>
             <p className="text-sm text-white/80 mt-2">
-              {demands.length} demandas encontradas
+              {base.length} demandas encontradas
             </p>
 
             <button
@@ -207,12 +219,21 @@ function DemandsPageContent() {
           )}
         </div>
 
+        {somentePrivativas && (
+        <button
+          onClick={() => setSomentePrivativas(false)}
+          className="mt-2 mr-4 text-xs text-[#6b5b95] font-medium"
+        >
+          🔒 Mostrando apenas privativas — ✕ ver todas
+        </button>
+      )}
+
         {/* FILTROS */}
         <div className="mx-4 mt-4 bg-white rounded-3xl border border-gray-100 shadow-sm p-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800">🔎 Filtros</h2>
             <button
-              onClick={() => { setStatus(''); setPrioridade(''); setTipo(''); setResponsavel('') }}
+              onClick={() => { setStatus(''); setPrioridade(''); setTipo(''); setResponsavel(''); setSomentePrivativas(false) }}
               className="text-xs text-[#1a2744] font-medium"
             >
               Limpar
