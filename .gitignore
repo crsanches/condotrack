@@ -1,1 +1,8 @@
 node_modules
+**/serviceAccountKey.json
+.next/
+.DS_Store
+dump-tarefas.mjs
+limpar-duplicatas.mjs
+tarefas_periodicas.json
+condotrack-export.json
